@@ -42,7 +42,9 @@
 
 **Tesis central.** El modelo *tal como está formulado* —un marketplace de descubrimiento de moda cuya única fuente de ingreso inicial es una suscripción fija de CLP 100.000/mes a las marcas— **no tiene, por sí solo, los fundamentos para convertirse en una empresa de alto crecimiento ni en "la principal plataforma de moda de Latinoamérica".** No porque la idea sea mala, sino por cuatro razones cuantificables que desarrollamos en el cuerpo del informe:
 
-1. **El techo de ingreso es estructuralmente bajo.** A CLP 100.000/mes, *1.000 marcas* generan apenas **≈ US$1,26 millones de ARR** **[M]**. Eso no es una empresa de "alto crecimiento" valorada en cientos de millones; es un negocio de software pequeño-mediano. El modelo de suscripción **desacopla el ingreso de Moder del GMV**, regalando precisamente el *upside* que hace valiosos a los marketplaces. **[V — a16z; M]**
+1. **El techo de ingreso es estructuralmente bajo —y el techo de *clientes* lo es aún más.** El propio fundador estima que el universo realista de tiendas que pagarían es **"con suerte, 350"**. A CLP 100.000/mes, **350 tiendas generan apenas ≈ US$442.000 de ARR** **[M]** —y aun con el supuesto irreal de 1.000 marcas serían solo ~US$1,26M. Eso no es una empresa de "alto crecimiento"; es, en el mejor de los casos, un negocio de software pequeño. El modelo de suscripción **desacopla el ingreso de Moder del GMV**, regalando precisamente el *upside* que hace valiosos a los marketplaces. **[V — a16z; M]**
+
+   > **Reality check del techo de 350 tiendas.** Bajo el caso base (con adquisición de consumidor pagada), el **punto de equilibrio exige ~900–1.986 marcas** — entre **3× y 6× por encima del techo realista**. En otras palabras: *con suscripción pura, Moder no llega a break-even ni en el mejor de sus tamaños posibles.* El **único** escenario en que 350 tiendas dan ganancia es full-orgánico (CAC de consumidor ≈ 0) + micro-equipo de 2–3 personas (opex ≤ US$250k): ahí el EBITDA es +US$150k–280k (margen 35–64%). Eso es un *lifestyle business* sólido, valorado en ~US$1–4,4M — **no una empresa de alto crecimiento.**
 
 2. **Bajo suscripción pura, el consumidor genera US$0 de ingreso directo a Moder.** Es un **centro de costo**, no de ingreso. Como Moder igual debe pagar para atraer y retener consumidores (sin demanda, las marcas no renuevan), la economía se invierte: se paga por adquirir un lado que no monetiza. Por eso el EBITDA es **negativo en 13 de 15 combinaciones** escenario×tamaño que modelamos. **[M]**
 
@@ -63,7 +65,8 @@
 | # | Hipótesis del fundador | Veredicto | Sección |
 |---|---|---|---|
 | H1 | La suscripción de marcas es una base de ingreso suficiente para la etapa inicial | **Parcial.** Suficiente para *sobrevivir* en nicho; insuficiente para "alto crecimiento". | §4, §10 |
-| H2 | Llegar a 50 → 100 → 250 → 500 → 1.000 marcas construye una empresa grande | **Refutada** para "grande". A 1.000 marcas, ARR ≈ US$1,26M. | §10 |
+| H2 | Llegar a 500 → 1.000 marcas construye una empresa grande | **Doblemente refutada.** El techo realista es ~350 tiendas (ARR ≈ US$442k), y ni a 1.000 (ARR US$1,26M) sería "grande". | §10 |
+| H2b | El universo de tiendas es de cientos/miles | **Confirmada como límite duro: "con suerte 350".** Esto *fija el techo de ingreso* de la suscripción. | §10.7 |
 | H3 | Margen de marca = 1,5× costo (33% bruto) | **Refutada como representativo.** Moda real: 40–70%. | §5 |
 | H4 | Una prenda promedio cuesta ~CLP 50.000 | **Plausible** como ticket de gama media chilena; no verificable en primaria. | §3, §5 |
 | H5 (implícita) | El reto es conseguir marcas | **Refutada.** El reto es la *liquidez* (demanda que dé ROI a las marcas). | §8 |
@@ -141,9 +144,10 @@ No son mercados-objetivo realistas de corto plazo, pero definen a los gigantes q
 | **TAM** | Gasto en moda online LatAm | ~US$74 mil M (2025) | [D] |
 | **SAM** | Moda online Chile (mercado de entrada) | ~US$2,4 mil M | [D] |
 | **SOM (3–5 años, realista)** | Marcas independientes/curadas Chile capturables | **US$20–60 M de GMV** | [M] |
-| **SOM monetizable por Moder (suscripción)** | Ingreso a 250–1.000 marcas | **US$0,3–1,3 M ARR** | [M] |
+| **Universo de tiendas pagadoras (techo real)** | Marcas dispuestas a pagar la suscripción | **~350 ("con suerte")** | Estimación del fundador |
+| **SOM monetizable por Moder (suscripción)** | Ingreso al techo de ~350 tiendas | **≈ US$442k ARR** (máx.) | [M] |
 
-El salto entre las dos últimas filas es la tesis completa del informe: **el GMV potencial (decenas de millones) empequeñece el ingreso por suscripción (~US$1M).** Ahí vive el valor que el modelo actual regala.
+El salto entre las filas es la tesis completa del informe: **el GMV potencial (decenas de millones) empequeñece el ingreso por suscripción (~US$0,4M en el techo real).** Ahí vive el valor que el modelo actual regala. Y nótese el problema de raíz: **el techo no es el dinero, es el número de clientes.** Un mercado de ~350 tiendas pagadoras pone un candado duro al ingreso de suscripción que *ninguna* mejora de ejecución puede abrir — solo se rompe monetizando el GMV (capítulo 13).
 
 ---
 
@@ -197,7 +201,7 @@ CLP 100.000/mes de suscripción, prenda de CLP 50.000. **[M]**
 
 > **Interpretación de "ROI 3×":** lo definimos como *generar utilidad bruta equivalente a 3× la suscripción* (CLP 300.000). Si se exige ROI 3× **neto** (recuperar la suscripción **y además** 3×), las cifras suben ~33% (p. ej., 24 prendas a 1,5×). Ambas lecturas están en el Anexo B.
 
-**Buena noticia para Moder:** corregido el supuesto de margen, una marca necesita **~4 prendas/mes** para no perder dinero y **~11/mes** para un ROI 3×. Es un umbral *alcanzable*. El problema no es el umbral por marca: es **multiplicarlo por 50–1.000 marcas simultáneamente** (la liquidez agregada).
+**Buena noticia para Moder:** corregido el supuesto de margen, una marca necesita **~4 prendas/mes** para no perder dinero y **~11/mes** para un ROI 3×. Es un umbral *alcanzable*. El problema no es el umbral por marca: es **multiplicarlo por las ~350 marcas del techo simultáneamente** (la liquidez agregada).
 
 ### 5.3 El take rate efectivo: por qué la suscripción fija castiga a la marca débil
 
@@ -338,9 +342,9 @@ El combustible de este volante **no es la suscripción** —es la **calidad de l
 
 *(Escenario base; rangos = conservador–optimista. Todo [M] salvo indicación.)*
 
-1. **¿Cuántas descargas necesita Moder?** Para sostener 50 marcas felices: **~58.000 acumuladas** (42k–83k). Escala lineal aproximada: ~117k para 100 marcas, ~292k para 250, ~583k para 500, **~1,17M para 1.000**.
-2. **¿Cuántos MAU?** **~13.000** para 50 marcas; ~260.000 para 1.000.
-3. **¿Cuántos DAU?** **~1.900** para 50 marcas (DAU/MAU 15%); ~38.000 para 1.000.
+1. **¿Cuántas descargas necesita Moder?** Para sostener 50 marcas felices: **~58.000 acumuladas** (42k–83k). Escala lineal aproximada: ~117k para 100, ~175k para 150, ~292k para 250, **~408k para el techo de 350 tiendas**.
+2. **¿Cuántos MAU?** **~13.000** para 50 marcas; **~90.000 al techo de 350**.
+3. **¿Cuántos DAU?** **~1.900** para 50 marcas (DAU/MAU 15%); **~13.500 al techo de 350**.
 4. **¿Qué % de descargas permanece activo?** **~22%** base (15–30%). Ojo: la retención D30 de apps de shopping es de un dígito (~5–10%) **[D]**; el 22% asume reactivación y un producto pegajoso —es *optimista* y debe validarse.
 5. **¿Qué % compra?** De los MAU, **~3%/mes** (2–4%) **[D — apparel ~3,4%]**. De las descargas totales, ~0,5–1%/mes.
 6. **¿Cuántas prendas por comprador?** **~1,3 por orden** (1,2–1,5); frecuencia baja (moda = compra poco frecuente).
@@ -363,13 +367,17 @@ El combustible de este volante **no es la suscripción** —es la **calidad de l
 
 ### 10.1 Ingreso por suscripción (el techo)
 
+> Re-anclado al **techo realista de ~350 tiendas** señalado por el fundador. Las filas de 500/1.000 se mantienen abajo solo como referencia teórica.
+
 | Marcas | MRR (CLP) | ARR (CLP) | **ARR (USD)** |
 |---|---|---|---|
 | 50 | 5,0 M | 60,0 M | **63.158** |
 | 100 | 10,0 M | 120,0 M | **126.316** |
+| 150 | 15,0 M | 180,0 M | **189.474** |
 | 250 | 25,0 M | 300,0 M | **315.789** |
-| 500 | 50,0 M | 600,0 M | **631.579** |
-| 1.000 | 100,0 M | 1.200,0 M | **1.263.158** |
+| **350 (techo real)** | **35,0 M** | **420,0 M** | **442.105** |
+| *500 (teórico)* | *50,0 M* | *600,0 M* | *631.579* |
+| *1.000 (teórico)* | *100,0 M* | *1.200,0 M* | *1.263.158* |
 
 ### 10.2 P&L por escenario (EBITDA, USD)
 
@@ -378,8 +386,8 @@ El combustible de este volante **no es la suscripción** —es la **calidad de l
 | Marcas | ARR | Acq. consumidor | Acq. marca | Opex | **EBITDA** | Margen |
 |---|---|---|---|---|---|---|
 | 50 | 63k | 117k | 14k | 150k | **−218k** | −344% |
-| 250 | 316k | 583k | 70k | 450k | **−788k** | −249% |
-| 1.000 | 1.263k | 2.333k | 280k | 1.100k | **−2.450k** | −194% |
+| 150 | 189k | 350k | 42k | 320k | **−523k** | −276% |
+| **350** | **442k** | **817k** | **98k** | **550k** | **−1.023k** | **−231%** |
 
 **Escenario Base**
 
@@ -387,20 +395,20 @@ El combustible de este volante **no es la suscripción** —es la **calidad de l
 |---|---|---|---|---|---|---|
 | 50 | 63k | 44k | 6k | 150k | **−136k** | −216% |
 | 100 | 126k | 87k | 11k | 250k | **−222k** | −176% |
+| 150 | 189k | 131k | 17k | 320k | **−279k** | −147% |
 | 250 | 316k | 219k | 28k | 450k | **−381k** | −121% |
-| 500 | 632k | 437k | 56k | 700k | **−562k** | −89% |
-| 1.000 | 1.263k | 874k | 113k | 1.100k | **−823k** | −65% |
+| **350 (techo)** | **442k** | **306k** | **39k** | **550k** | **−453k** | **−103%** |
 
 **Escenario Optimista**
 
 | Marcas | ARR | Acq. consumidor | Acq. marca | Opex | **EBITDA** | Margen |
 |---|---|---|---|---|---|---|
 | 50 | 63k | 15k | 2k | 150k | **−104k** | −164% |
+| 150 | 189k | 44k | 7k | 320k | **−181k** | −96% |
 | 250 | 316k | 73k | 11k | 450k | **−218k** | −69% |
-| 500 | 632k | 146k | 23k | 700k | **−237k** | −37% |
-| 1.000 | 1.263k | 292k | 45k | 1.100k | **−174k** | −14% |
+| **350 (techo)** | **442k** | **102k** | **16k** | **550k** | **−226k** | **−51%** |
 
-**Lectura.** Bajo suscripción pura, **ningún escenario alcanza EBITDA positivo dentro del rango 50–1.000 marcas.** El mejor caso (optimista, 1.000 marcas) sigue en −14%. La causa: el costo de sostener la demanda del consumidor (que no monetiza directamente) + opex supera al ingreso topado por el precio fijo.
+**Lectura.** Bajo suscripción pura, **ningún escenario alcanza EBITDA positivo dentro del techo realista de 350 tiendas.** Incluso el caso optimista a 350 sigue en −51%, y el base en −103% (pierde más que todo su ingreso). La causa: el costo de sostener la demanda del consumidor (que no monetiza directamente) + opex supera al ingreso topado por el precio fijo y por el número de clientes. La **única** salida a EBITDA positivo se ve en §10.7 (full-orgánico + micro-equipo).
 
 ### 10.3 LTV, CAC y Payback
 
@@ -417,15 +425,15 @@ El combustible de este volante **no es la suscripción** —es la **calidad de l
 
 Contribución neta por marca ≈ **US$277/año**. Marcas necesarias para cubrir opex:
 
-| Opex (etapa) | Marcas para EBITDA ≥ 0 |
-|---|---|
-| US$150k | **~542** |
-| US$250k | ~904 |
-| US$450k | ~1.627 |
-| US$700k | ~2.531 |
-| US$1,1M | ~3.978 |
+| Opex (etapa) | Marcas para EBITDA ≥ 0 | ¿Alcanzable con techo de 350? |
+|---|---|---|
+| US$150k | **~542** | ❌ |
+| US$250k | ~904 | ❌ |
+| US$320k | ~1.157 | ❌ |
+| US$450k | ~1.627 | ❌ |
+| US$550k | ~1.986 | ❌ |
 
-**El break-even exige del orden de 540 marcas con el equipo más austero, y miles si el equipo crece.** Está muy por encima del objetivo de 50 y del horizonte cómodo de 1.000 — *salvo* que el orgánico empuje el CAC del consumidor cerca de cero (lo que sube la contribución por marca y baja el break-even).
+**El break-even exige del orden de 900–1.986 marcas según el tamaño del equipo — entre 3× y 6× el techo realista de 350 tiendas.** Es decir: con suscripción y CAC pagado, **Moder no llega a equilibrio ni en su mejor tamaño posible.** La única forma de cerrar la brecha es empujar el CAC del consumidor cerca de cero vía orgánico (§10.7).
 
 ### 10.5 Flujo de caja y necesidad de capital
 
@@ -437,20 +445,37 @@ Con EBITDA negativo en todos los tamaños bajo suscripción pura, el **FCF es ne
 
 | Marcas | ARR (USD) | 2,4× (Lyst) | 6× (SaaS med.) | 10× (alto crec.) |
 |---|---|---|---|---|
+| 150 | 189k | 0,45M | 1,1M | 1,9M |
 | 250 | 316k | 0,76M | 1,9M | 3,2M |
-| 500 | 632k | 1,5M | 3,8M | 6,3M |
-| 1.000 | 1.263k | 3,0M | 7,6M | **12,6M** |
+| **350 (techo)** | **442k** | **1,1M** | **2,7M** | **4,4M** |
+| *1.000 (teórico)* | *1.263k* | *3,0M* | *7,6M* | *12,6M* |
 
-Incluso con un múltiplo generoso de alto crecimiento, **Moder-suscripción a 1.000 marcas vale ~US$8–13M.** No es un *outcome* de venture.
+Al **techo realista de 350 tiendas**, incluso con un múltiplo generoso de alto crecimiento, **Moder-suscripción vale ~US$1,1–4,4M.** Con el múltiplo de salida real de un marketplace de moda (Lyst, 2,4×), ~US$1,1M. No es un *outcome* de venture — es la valoración de un buen pequeño negocio.
 
 **(b) Con take rate sobre GMV (12%)** —el mismo volumen de ventas, pero capturando comisión:
 
 | Marcas | GMV/año (USD) | Ingreso @12% | EV @4× ingreso |
 |---|---|---|---|
+| 150 | 0,95M | 114k | 0,45M |
 | 250 | 1,58M | 189k | 0,76M |
-| 1.000 | 6,32M | 758k | 3,0M |
+| **350 (techo, base)** | **2,21M** | **265k** | **1,06M** |
 
-**Hallazgo matizado y honesto:** a estos volúmenes *bajos*, la suscripción fija incluso **recauda más** que un take rate del 12% (porque su take rate efectivo es >12%). Esto **no** valida la suscripción —confirma que **a baja liquidez sobre-cobra a las marcas** (§5.3). El take rate gana cuando el GMV por marca crece; la estrategia correcta es **híbrida y dependiente de la liquidez** (§13). El verdadero salto de valoración no viene de elegir suscripción vs comisión a este tamaño: viene de **multiplicar el GMV** (más ventas por marca) y **añadir capas de monetización de alto margen** (ads, datos/IA, servicios financieros) sobre una base líquida.
+**Hallazgo matizado y honesto:** a estos volúmenes *bajos*, la suscripción fija incluso **recauda más** que un take rate del 12% (porque su take rate efectivo es >12%). Esto **no** valida la suscripción —confirma que **a baja liquidez sobre-cobra a las marcas** (§5.3). El take rate gana cuando el GMV por marca crece; la estrategia correcta es **híbrida y dependiente de la liquidez** (§13).
+
+**La clave que libera el techo de 350.** El número de tiendas está topado (~350), pero el **GMV por tienda no lo está.** Si Moder logra que cada una de esas 350 tiendas venda 30–50 prendas/mes en vez de 10 (es decir, si gana la liquidez), el GMV salta a US$6–11M/año, y sobre esa base sí caben capas de monetización de alto margen — comisión, **ads/destacados de marca**, **market intelligence** (datos de demanda que solo Moder tiene) y servicios financieros. *Ahí* —en el GMV por tienda y en las capas sobre el GMV, no en el conteo de tiendas— está el único camino a una empresa de crecimiento. El techo de 350 clientes no es el techo del negocio si el negocio deja de cobrar por "estar listado" y empieza a cobrar por "vender".
+
+### 10.7 Reality check: el techo de 350 tiendas
+
+Combinando el límite de clientes (~350) con la economía:
+
+| Caso a 350 tiendas | Opex | EBITDA | Margen | Veredicto |
+|---|---|---|---|---|
+| Base (CAC consumidor pagado), equipo normal | US$550k | **−US$453k** | −103% | Insostenible |
+| Base, micro-equipo | US$250k | **−US$153k** | −35% | Aún pierde |
+| **Full-orgánico (CAC≈0) + micro-equipo** | US$250k | **+US$153k** | +35% | **Micro-negocio rentable** |
+| Full-orgánico + equipo mínimo (2 pers.) | US$120k | **+US$283k** | +64% | *Lifestyle business* sólido |
+
+**Conclusión cruda.** Con suscripción pura y techo de 350 tiendas, el *mejor resultado alcanzable* es un **micro-negocio rentable de ~US$150–280k de utilidad anual** —si y solo si la demanda es casi 100% orgánica y el equipo es de 2–3 personas. Es un negocio digno y financiable como tal, pero **estructuralmente incapaz** de ser "la principal plataforma de moda de LatAm" o una empresa de alto crecimiento. Para que 350 tiendas se conviertan en una empresa grande, **el modelo de ingreso debe dejar de ser la suscripción** y pasar a capturar el GMV (que sí escala con la liquidez, no con el conteo de tiendas).
 
 ---
 
@@ -492,6 +517,8 @@ Incluso con un múltiplo generoso de alto crecimiento, **Moder-suscripción a 1.
 ## 13. *Si yo fuera el CEO de Moder durante los próximos cinco años*
 
 > Escrito en primera persona, como haría el CEO. El principio rector: **la liquidez manda; la monetización sigue a la liquidez; el foco vence a la ambición.**
+>
+> **Premisa que lo cambia todo:** si el universo de tiendas pagadoras es "con suerte 350", entonces *jamás* construiré la empresa contando tiendas — el techo de US$442k de ARR está fijado de antemano. Construiré la empresa **maximizando el GMV por tienda y monetizando ese GMV.** 350 tiendas líquidas que venden mucho son una gran empresa; 350 tiendas que pagan US$100 son un micro-negocio. Toda mi estrategia de 5 años se reorienta a esa verdad.
 
 ### Año 1 — Ganar la liquidez en un nicho minúsculo (no escalar marcas)
 
@@ -560,7 +587,7 @@ Incluso con un múltiplo generoso de alto crecimiento, **Moder-suscripción a 1.
 
 **Supuestos de funnel (consumidor).** Ver tabla §6.1. Nota crítica: el "% de descargas activo" base (22%) es **optimista** frente a la retención D30 de apps de shopping (~5–10% [D]); se justifica solo si Moder logra un producto muy pegajoso. Recomendamos validar con datos propios cuanto antes.
 
-**Supuestos del P&L de Moder.** Opex anual cargado por etapa: 50→US$150k; 100→US$250k; 250→US$450k; 500→US$700k; 1.000→US$1,1M. CAC marca (B2B): US$700/450/300 (cons/base/opt). Margen bruto software 75%. Adquisición de consumidor anual ≈ instalaciones necesarias × (1 − % orgánico) × CPI (simplificación: trata las instalaciones requeridas como reposición anual de la base, dado el alto churn; es conservador para bases de baja retención).
+**Supuestos del P&L de Moder.** Opex anual cargado por etapa: 50→US$150k; 100→US$250k; 150→US$320k; 250→US$450k; 350→US$550k. Escenario "micro-equipo" (full-orgánico, §10.7): US$120k–250k. CAC marca (B2B): US$700/450/300 (cons/base/opt). Margen bruto software 75%. Adquisición de consumidor anual ≈ instalaciones necesarias × (1 − % orgánico) × CPI (simplificación: trata las instalaciones requeridas como reposición anual de la base, dado el alto churn; es conservador para bases de baja retención).
 
 **Niveles de confianza.** [V] verificado adversarialmente; [D] direccional (market research comercial); [M] modelo propio. Las casas de market research difieren significativamente entre sí; las cifras [D] son para magnitud, no precisión.
 

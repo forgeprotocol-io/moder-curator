@@ -44,7 +44,7 @@ print("="*70)
 print("2) INGRESO MODER POR # MARCAS (solo suscripcion)")
 print("="*70)
 print(f"{'Marcas':>7} {'MRR CLP':>12} {'ARR CLP':>14} {'ARR USD':>10}")
-brand_counts = [50,100,250,500,1000]
+brand_counts = [50,100,150,250,350]
 for n in brand_counts:
     mrr = n*SUB_M
     arr = n*SUB_Y
@@ -87,7 +87,9 @@ print("="*70)
 print("4) P&L MODER — escenarios x # marcas (solo suscripcion)")
 print("="*70)
 # opex anual USD por etapa (equipo+tech+infra), cargado
-opex_stage = {50:150_000, 100:250_000, 250:450_000, 500:700_000, 1000:1_100_000}
+opex_stage = {50:150_000, 100:250_000, 150:320_000, 250:450_000, 350:550_000}
+# Escenario "micro-equipo" full-organico (2-3 personas) para el techo de 350:
+opex_micro = 250_000
 # CAC marca (B2B venta) USD
 cac_brand = {"Conservador":700,"Base":450,"Optimista":300}
 for name,s in scen.items():
@@ -145,3 +147,30 @@ for n in brand_counts:
     gmv_y = gmv_m*12
     rev = gmv_y*0.12
     print(f"{n:>7} {gmv_m:>12,.0f} {gmv_y:>13,.0f} {rev:>13,.0f} {rev*4:>12,.0f}")
+
+print()
+print("="*70)
+print("7) REALITY CHECK — TECHO REALISTA = 350 TIENDAS")
+print("="*70)
+CEIL = 350
+arr_ceil = usd(CEIL*SUB_Y)
+print(f"ARR maximo (350 tiendas, suscripcion): {CEIL*SUB_Y:,.0f} CLP = ${arr_ceil:,.0f}")
+print(f"\nEscenario Base (CAC consumidor via paid) a 350 tiendas:")
+s = scen["Base"]
+sales = CEIL*s['vpb']; mau = sales/(s['conv']*s['items']); inst = mau/s['active']
+acq_cons = usd(inst*(1-s['organic'])*s['cpi_meta']*FX)
+acq_marca = CEIL*s['churn']*cac_brand['Base']
+for label,opex in [("equipo normal $550k",550_000),("micro-equipo $250k",250_000)]:
+    ebitda = arr_ceil - acq_cons - acq_marca - opex
+    print(f"   {label}: ARR ${arr_ceil:,.0f} - acqCons ${acq_cons:,.0f} - acqMarca ${acq_marca:,.0f} - opex ${opex:,.0f} = EBITDA ${ebitda:,.0f}")
+print(f"\nMEJOR CASO ABSOLUTO: full-organico (CAC consumidor ~0) + micro-equipo:")
+for opex in [250_000, 180_000, 120_000]:
+    contrib = arr_ceil - acq_marca  # sin acq consumidor
+    ebitda = contrib - opex
+    print(f"   opex ${opex:,.0f}: EBITDA ${ebitda:,.0f} (margen {ebitda/arr_ceil*100:.0f}%)")
+print(f"\nValoracion a 350 tiendas (suscripcion):")
+for mult,lbl in [(2.4,"2.4x Lyst"),(6,"6x SaaS"),(10,"10x hi-growth")]:
+    print(f"   {lbl}: ${arr_ceil*mult:,.0f}")
+print(f"\nBrecha de break-even: contribucion neta/marca (base) ~$277 -> ")
+print(f"   marcas para cubrir opex $550k = {550_000/277:,.0f} (vs techo de 350)")
+print(f"   marcas para cubrir opex $250k = {250_000/277:,.0f} (vs techo de 350)")
