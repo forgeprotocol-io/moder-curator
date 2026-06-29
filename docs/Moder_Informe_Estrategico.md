@@ -42,11 +42,11 @@
 
 **Tesis central.** El modelo *tal como está formulado* —un marketplace de descubrimiento de moda cuya única fuente de ingreso inicial es una suscripción fija de CLP 100.000/mes a las marcas— **no tiene, por sí solo, los fundamentos para convertirse en una empresa de alto crecimiento ni en "la principal plataforma de moda de Latinoamérica".** No porque la idea sea mala, sino por cuatro razones cuantificables que desarrollamos en el cuerpo del informe:
 
-1. **El techo de ingreso es estructuralmente bajo —y el techo de *clientes* lo es aún más.** El propio fundador estima que el universo realista de tiendas que pagarían es **"con suerte, 350"**. A CLP 100.000/mes, **350 tiendas generan apenas ≈ US$442.000 de ARR** **[M]** —y aun con el supuesto irreal de 1.000 marcas serían solo ~US$1,26M. Eso no es una empresa de "alto crecimiento"; es, en el mejor de los casos, un negocio de software pequeño. El modelo de suscripción **desacopla el ingreso de Moder del GMV**, regalando precisamente el *upside* que hace valiosos a los marketplaces. **[V — a16z; M]**
+1. **El techo de ingreso es estructuralmente bajo —y el techo de *clientes* lo es aún más.** El propio fundador estima que el universo realista de tiendas que pagarían es **"con suerte, 350"**. A CLP 100.000/mes, **350 tiendas generan apenas ≈ CLP 420 millones de ARR** **[M]** —y aun con el supuesto irreal de 1.000 marcas serían solo ~CLP 1.200 millones. Eso no es una empresa de "alto crecimiento"; es, en el mejor de los casos, un negocio de software pequeño. El modelo de suscripción **desacopla el ingreso de Moder del GMV**, regalando precisamente el *upside* que hace valiosos a los marketplaces. **[V — a16z; M]**
 
-   > **Reality check del techo de 350 tiendas.** Bajo el caso base (con adquisición de consumidor pagada), el **punto de equilibrio exige ~900–1.986 marcas** — entre **3× y 6× por encima del techo realista**. En otras palabras: *con suscripción pura, Moder no llega a break-even ni en el mejor de sus tamaños posibles.* El **único** escenario en que 350 tiendas dan ganancia es full-orgánico (CAC de consumidor ≈ 0) + micro-equipo de 2–3 personas (opex ≤ US$250k): ahí el EBITDA es +US$150k–280k (margen 35–64%). Eso es un *lifestyle business* sólido, valorado en ~US$1–4,4M — **no una empresa de alto crecimiento.**
+   > **Reality check del techo de 350 tiendas.** Bajo el caso base (con adquisición de consumidor pagada), el **punto de equilibrio exige ~900–1.989 marcas** — entre **3× y 6× por encima del techo realista**. En otras palabras: *con suscripción pura, Moder no llega a break-even ni en el mejor de sus tamaños posibles.* El **único** escenario en que 350 tiendas dan ganancia es full-orgánico (CAC de consumidor ≈ 0) + micro-equipo de 2–3 personas (opex ≤ CLP 238 millones): ahí el EBITDA es **+CLP 145–269 millones** (margen 35–64%). Eso es un *lifestyle business* sólido, valorado en ~**CLP 1.000–4.200 millones** — **no una empresa de alto crecimiento.**
 
-2. **Bajo suscripción pura, el consumidor genera US$0 de ingreso directo a Moder.** Es un **centro de costo**, no de ingreso. Como Moder igual debe pagar para atraer y retener consumidores (sin demanda, las marcas no renuevan), la economía se invierte: se paga por adquirir un lado que no monetiza. Por eso el EBITDA es **negativo en 13 de 15 combinaciones** escenario×tamaño que modelamos. **[M]**
+2. **Bajo suscripción pura, el consumidor genera CLP 0 de ingreso directo a Moder.** Es un **centro de costo**, no de ingreso. Como Moder igual debe pagar para atraer y retener consumidores (sin demanda, las marcas no renuevan), la economía se invierte: se paga por adquirir un lado que no monetiza. Por eso el EBITDA es **negativo en las 15 combinaciones** escenario×tamaño que modelamos (dentro del techo de 350 tiendas). **[M]**
 
 3. **El verdadero cuello de botella no es cobrar a las marcas: es la liquidez.** La causa #1 de muerte de marketplaces es nunca alcanzar liquidez (el problema *chicken-and-egg* / cold-start). **[V — a16z, corroborado]** Una suscripción fija *no* resuelve la liquidez; al contrario, **sobre-cobra a las marcas de bajo desempeño**: una marca que vende 1–2 prendas/mes por Moder paga un *take rate efectivo de 100–200% sobre su GMV* **[M]**, lo que dispara el churn de oferta.
 
@@ -65,7 +65,7 @@
 | # | Hipótesis del fundador | Veredicto | Sección |
 |---|---|---|---|
 | H1 | La suscripción de marcas es una base de ingreso suficiente para la etapa inicial | **Parcial.** Suficiente para *sobrevivir* en nicho; insuficiente para "alto crecimiento". | §4, §10 |
-| H2 | Llegar a 500 → 1.000 marcas construye una empresa grande | **Doblemente refutada.** El techo realista es ~350 tiendas (ARR ≈ US$442k), y ni a 1.000 (ARR US$1,26M) sería "grande". | §10 |
+| H2 | Llegar a 500 → 1.000 marcas construye una empresa grande | **Doblemente refutada.** El techo realista es ~350 tiendas (ARR ≈ CLP 420 M), y ni a 1.000 (ARR CLP 1.200 M) sería "grande". | §10 |
 | H2b | El universo de tiendas es de cientos/miles | **Confirmada como límite duro: "con suerte 350".** Esto *fija el techo de ingreso* de la suscripción. | §10.7 |
 | H3 | Margen de marca = 1,5× costo (33% bruto) | **Refutada como representativo.** Moda real: 40–70%. | §5 |
 | H4 | Una prenda promedio cuesta ~CLP 50.000 | **Plausible** como ticket de gama media chilena; no verificable en primaria. | §3, §5 |
@@ -90,7 +90,8 @@ Esto no es opinión: es la lección consolidada de la literatura de marketplaces
 
 | Parámetro | Valor base | Fuente / nivel |
 |---|---|---|
-| Tipo de cambio CLP/USD | **950** (promedio 2025 ≈ 951) | exchange-rates.org **[D]** |
+| **Moneda del modelo** | **Pesos chilenos (CLP).** Cifras en "M CLP" = millones de pesos. | — |
+| Tipo de cambio CLP/USD | **950** (promedio 2025 ≈ 951). Solo se usa para convertir benchmarks publicados en USD (CPI de Meta/TikTok, opex de mercado, múltiplos). | exchange-rates.org **[D]** |
 | Suscripción | CLP 100.000/mes = 1.200.000/año = **US$1.263/año** | Dato del fundador |
 | Precio prenda promedio | CLP 50.000 = **US$53** | Dato del fundador **[H4]** |
 | Margen bruto de marca (base) | **55%** (no 33%) | TrueProfit; comps públicos **[D]** — ver §5 |
@@ -143,11 +144,11 @@ No son mercados-objetivo realistas de corto plazo, pero definen a los gigantes q
 |---|---|---|---|
 | **TAM** | Gasto en moda online LatAm | ~US$74 mil M (2025) | [D] |
 | **SAM** | Moda online Chile (mercado de entrada) | ~US$2,4 mil M | [D] |
-| **SOM (3–5 años, realista)** | Marcas independientes/curadas Chile capturables | **US$20–60 M de GMV** | [M] |
+| **SOM (3–5 años, realista)** | Marcas independientes/curadas Chile capturables | **CLP 19.000–57.000 M de GMV** (~US$20–60 M) | [M] |
 | **Universo de tiendas pagadoras (techo real)** | Marcas dispuestas a pagar la suscripción | **~350 ("con suerte")** | Estimación del fundador |
-| **SOM monetizable por Moder (suscripción)** | Ingreso al techo de ~350 tiendas | **≈ US$442k ARR** (máx.) | [M] |
+| **SOM monetizable por Moder (suscripción)** | Ingreso al techo de ~350 tiendas | **≈ CLP 420 M ARR** (máx.) | [M] |
 
-El salto entre las filas es la tesis completa del informe: **el GMV potencial (decenas de millones) empequeñece el ingreso por suscripción (~US$0,4M en el techo real).** Ahí vive el valor que el modelo actual regala. Y nótese el problema de raíz: **el techo no es el dinero, es el número de clientes.** Un mercado de ~350 tiendas pagadoras pone un candado duro al ingreso de suscripción que *ninguna* mejora de ejecución puede abrir — solo se rompe monetizando el GMV (capítulo 13).
+El salto entre las filas es la tesis completa del informe: **el GMV potencial (decenas de miles de millones de pesos) empequeñece el ingreso por suscripción (~CLP 420 M en el techo real).** Ahí vive el valor que el modelo actual regala. Y nótese el problema de raíz: **el techo no es el dinero, es el número de clientes.** Un mercado de ~350 tiendas pagadoras pone un candado duro al ingreso de suscripción que *ninguna* mejora de ejecución puede abrir — solo se rompe monetizando el GMV (capítulo 13).
 
 ---
 
@@ -254,19 +255,19 @@ CPI (costo por instalación) de apps de **shopping en Latinoamérica**: la regi�
 
 Costo de adquirir las descargas necesarias para 50 marcas (escenario base, ~58.300 instalaciones): **[M]**
 
-| Canal | CPI usado | Costo (CLP) | Costo (USD) |
-|---|---|---|---|
-| **100% Meta Ads** | US$1,5 | ~83,0 M | **~US$87.000** |
-| **100% TikTok Ads** | US$2,5 | ~138,4 M | **~US$145.700** |
-| Mix con 50% orgánico (solo paga 50%) | US$1,5 | ~41,5 M | **~US$43.700** |
+| Canal | CPI usado (CLP) | **Costo total (CLP)** |
+|---|---|---|
+| **100% Meta Ads** | ~1.425 | **~83,0 M** |
+| **100% TikTok Ads** | ~2.375 | **~138,4 M** |
+| Mix con 50% orgánico (solo paga 50%) | ~1.425 | **~41,5 M** |
 
-Rango entre escenarios: Meta **US$42k–167k**, TikTok **US$69k–238k**, para *el primer ciclo de 50 marcas*.
+Rango entre escenarios: Meta **CLP 40–158 M**, TikTok **CLP 69–238 M**, para *el primer ciclo de 50 marcas*.
 
-> **El golpe demoledor.** El ingreso de Moder con 50 marcas es **US$63.000/año**. Conseguir las descargas necesarias vía Meta cuesta **US$87.000** (y vía TikTok ~US$146.000) — **más que un año entero de ingresos, solo en adquisición de un lado que no monetiza directamente.** Esta es la razón aritmética por la que el modelo de suscripción pura no cierra: el CAC del consumidor se compara contra un ingreso que llega del *otro* lado y que está topado por el precio fijo.
+> **El golpe demoledor.** El ingreso de Moder con 50 marcas es **CLP 60 millones/año**. Conseguir las descargas necesarias vía Meta cuesta **CLP 83 millones** (y vía TikTok ~CLP 138 millones) — **más que un año entero de ingresos, solo en adquisición de un lado que no monetiza directamente.** Esta es la razón aritmética por la que el modelo de suscripción pura no cierra: el CAC del consumidor se compara contra un ingreso que llega del *otro* lado y que está topado por el precio fijo.
 
 ### 6.4 CAC por comprador y el rol del crecimiento orgánico
 
-CAC por **comprador** (no por instalación), escenario base, 100% pagado vía Meta: **~CLP 216.000 (US$227)**. Conservador: ~US$667. Optimista: ~US$83. **[M]**
+CAC por **comprador** (no por instalación), escenario base, 100% pagado vía Meta: **~CLP 216.000**. Conservador: ~CLP 633.000. Optimista: ~CLP 79.000. **[M]**
 
 **¿Cuánto reduce el CAC el crecimiento orgánico?** No hay una cifra verificada universal **[el research no la validó]**, pero la evidencia de los comparables es inequívoca en dirección: los marketplaces de moda que ganaron **no compraron su demanda, la cultivaron**:
 
@@ -349,8 +350,8 @@ El combustible de este volante **no es la suscripción** —es la **calidad de l
 5. **¿Qué % compra?** De los MAU, **~3%/mes** (2–4%) **[D — apparel ~3,4%]**. De las descargas totales, ~0,5–1%/mes.
 6. **¿Cuántas prendas por comprador?** **~1,3 por orden** (1,2–1,5); frecuencia baja (moda = compra poco frecuente).
 7. **¿Cuántas ventas mensuales para que 50 empresas estén felices?** **~500/mes** (300–750), es decir **~10 prendas/marca/mes**. Mínimo para que *la mayoría* supere break-even (≥4/marca con margen real): ~200–300/mes; para ROI 3× generalizado: ~550/mes.
-8. **¿Cuánto costaría esas descargas solo con Meta?** **~US$87.000** (US$42k–167k) para el ciclo de 50 marcas.
-9. **¿Y con TikTok?** **~US$146.000** (US$69k–238k).
+8. **¿Cuánto costaría esas descargas solo con Meta?** **~CLP 83 millones** (CLP 40–158 M) para el ciclo de 50 marcas.
+9. **¿Y con TikTok?** **~CLP 138 millones** (CLP 69–238 M).
 10. **¿Cuánto reduce el CAC el crecimiento orgánico?** Proporcional a la mezcla: **50% orgánico ⇒ −50% del costo pagado; 65% ⇒ −65%.** Es la palanca decisiva.
 11. **¿Qué KPIs semanales?** Ver §12 (liquidez, no vanidad).
 12. **¿Riesgos principales?** Ver §11 (cold-start/liquidez, churn de marcas por take rate efectivo, CAC > ingreso, techo de ingreso, competencia).
@@ -414,68 +415,74 @@ El combustible de este volante **no es la suscripción** —es la **calidad de l
 
 **Trampa analítica frecuente — el "LTV/CAC del lado marca" se ve genial y es engañoso:**
 
-- ARPA = US$1.263/año; churn de marca base 25% ⇒ vida media 4 años; margen bruto software 75% ⇒ **LTV marca ≈ US$3.789**.
-- CAC marca (venta B2B) ≈ US$450 ⇒ **LTV/CAC ≈ 8,4×** y **payback ≈ 5,7 meses**. *Excelente… en aislamiento.*
+- ARPA = CLP 1.200.000/año; churn de marca base 25% ⇒ vida media 4 años; margen bruto software 75% ⇒ **LTV marca ≈ CLP 3,6 millones**.
+- CAC marca (venta B2B) ≈ CLP 428.000 ⇒ **LTV/CAC ≈ 8,4×** y **payback ≈ 5,7 meses**. *Excelente… en aislamiento.*
 
-**La realidad fully-loaded:** hay que sumar el costo de adquirir la demanda del consumidor que hace que la marca venda. En base, eso es ~US$874/marca/año en adquisición de consumidor. **Incluido eso, la contribución neta por marca cae a ~US$277/año** y el **LTV/CAC fully-loaded cae por debajo de ~1× hasta que el orgánico domina.** Esta es la diferencia entre un modelo que parece sano y uno que no cierra.
+**La realidad fully-loaded:** hay que sumar el costo de adquirir la demanda del consumidor que hace que la marca venda. En base, eso es ~CLP 830.000/marca/año en adquisición de consumidor. **Incluido eso, la contribución neta por marca cae a ~CLP 263.000/año** y el **LTV/CAC fully-loaded cae por debajo de ~1× hasta que el orgánico domina.** Esta es la diferencia entre un modelo que parece sano y uno que no cierra.
 
-**LTV del consumidor (bajo suscripción pura): US$0 directo.** Moder no captura nada de la transacción. Este único hecho condena la economía y es el argumento más fuerte para migrar a take rate.
+**LTV del consumidor (bajo suscripción pura): CLP 0 directo.** Moder no captura nada de la transacción. Este único hecho condena la economía y es el argumento más fuerte para migrar a take rate.
 
 ### 10.4 Punto de equilibrio (suscripción pura, base)
 
-Contribución neta por marca ≈ **US$277/año**. Marcas necesarias para cubrir opex:
+Contribución neta por marca ≈ **CLP 263.000/año**. Marcas necesarias para cubrir opex:
 
-| Opex (etapa) | Marcas para EBITDA ≥ 0 | ¿Alcanzable con techo de 350? |
+| Opex anual (M CLP) | Marcas para EBITDA ≥ 0 | ¿Alcanzable con techo de 350? |
 |---|---|---|
-| US$150k | **~542** | ❌ |
-| US$250k | ~904 | ❌ |
-| US$320k | ~1.157 | ❌ |
-| US$450k | ~1.627 | ❌ |
-| US$550k | ~1.986 | ❌ |
+| 142,5 | **~542** | ❌ |
+| 237,5 | ~904 | ❌ |
+| 304,0 | ~1.157 | ❌ |
+| 427,5 | ~1.627 | ❌ |
+| 522,5 | ~1.989 | ❌ |
 
-**El break-even exige del orden de 900–1.986 marcas según el tamaño del equipo — entre 3× y 6× el techo realista de 350 tiendas.** Es decir: con suscripción y CAC pagado, **Moder no llega a equilibrio ni en su mejor tamaño posible.** La única forma de cerrar la brecha es empujar el CAC del consumidor cerca de cero vía orgánico (§10.7).
+**El break-even exige del orden de 900–1.989 marcas según el tamaño del equipo — entre 3× y 6× el techo realista de 350 tiendas.** Es decir: con suscripción y CAC pagado, **Moder no llega a equilibrio ni en su mejor tamaño posible.** La única forma de cerrar la brecha es empujar el CAC del consumidor cerca de cero vía orgánico (§10.7).
 
 ### 10.5 Flujo de caja y necesidad de capital
 
-Con EBITDA negativo en todos los tamaños bajo suscripción pura, el **FCF es negativo** y la empresa **requiere capital continuo** solo para sostener la demanda. Quemar US$130k–800k/año (base) para construir un negocio cuyo ARR tope es ~US$1,3M **no es financiable como venture de alto crecimiento**; es, en el mejor caso, un pequeño negocio rentable *si y solo si* el CAC del consumidor tiende a cero vía orgánico.
+Con EBITDA negativo en todos los tamaños bajo suscripción pura, el **FCF es negativo** y la empresa **requiere capital continuo** solo para sostener la demanda. Quemar **CLP 124–760 millones/año** (base, según tamaño) para construir un negocio cuyo ARR tope realista es ~CLP 420 millones **no es financiable como venture de alto crecimiento**; es, en el mejor caso, un pequeño negocio rentable *si y solo si* el CAC del consumidor tiende a cero vía orgánico.
 
 ### 10.6 Valoración potencial
 
 **(a) Suscripción pura — múltiplos sobre ARR** (SaaS público mediano ~6× EV/Rev 2025; alto crecimiento 8–12×; bajo crecimiento 1–2×; **salida real de marketplace de moda Lyst = 2,4×**). **[D / V]**
 
-| Marcas | ARR (USD) | 2,4× (Lyst) | 6× (SaaS med.) | 10× (alto crec.) |
-|---|---|---|---|---|
-| 150 | 189k | 0,45M | 1,1M | 1,9M |
-| 250 | 316k | 0,76M | 1,9M | 3,2M |
-| **350 (techo)** | **442k** | **1,1M** | **2,7M** | **4,4M** |
-| *1.000 (teórico)* | *1.263k* | *3,0M* | *7,6M* | *12,6M* |
+*(Todo en M CLP.)*
 
-Al **techo realista de 350 tiendas**, incluso con un múltiplo generoso de alto crecimiento, **Moder-suscripción vale ~US$1,1–4,4M.** Con el múltiplo de salida real de un marketplace de moda (Lyst, 2,4×), ~US$1,1M. No es un *outcome* de venture — es la valoración de un buen pequeño negocio.
+| Marcas | ARR (M CLP) | 2,4× (Lyst) | 6× (SaaS med.) | 10× (alto crec.) |
+|---|---|---|---|---|
+| 150 | 180 | 432 | 1.080 | 1.800 |
+| 250 | 300 | 720 | 1.800 | 3.000 |
+| **350 (techo)** | **420** | **1.008** | **2.520** | **4.200** |
+| *1.000 (teórico)* | *1.200* | *2.880* | *7.200* | *12.000* |
+
+Al **techo realista de 350 tiendas**, incluso con un múltiplo generoso de alto crecimiento, **Moder-suscripción vale ~CLP 1.000–4.200 millones.** Con el múltiplo de salida real de un marketplace de moda (Lyst, 2,4×), ~CLP 1.008 millones. No es un *outcome* de venture — es la valoración de un buen pequeño negocio.
 
 **(b) Con take rate sobre GMV (12%)** —el mismo volumen de ventas, pero capturando comisión:
 
-| Marcas | GMV/año (USD) | Ingreso @12% | EV @4× ingreso |
+*(Todo en M CLP.)*
+
+| Marcas | GMV/año (M CLP) | Ingreso @12% (M CLP) | EV @4× ingreso (M CLP) |
 |---|---|---|---|
-| 150 | 0,95M | 114k | 0,45M |
-| 250 | 1,58M | 189k | 0,76M |
-| **350 (techo, base)** | **2,21M** | **265k** | **1,06M** |
+| 150 | 900 | 108 | 432 |
+| 250 | 1.500 | 180 | 720 |
+| **350 (techo, base)** | **2.100** | **252** | **1.008** |
 
 **Hallazgo matizado y honesto:** a estos volúmenes *bajos*, la suscripción fija incluso **recauda más** que un take rate del 12% (porque su take rate efectivo es >12%). Esto **no** valida la suscripción —confirma que **a baja liquidez sobre-cobra a las marcas** (§5.3). El take rate gana cuando el GMV por marca crece; la estrategia correcta es **híbrida y dependiente de la liquidez** (§13).
 
-**La clave que libera el techo de 350.** El número de tiendas está topado (~350), pero el **GMV por tienda no lo está.** Si Moder logra que cada una de esas 350 tiendas venda 30–50 prendas/mes en vez de 10 (es decir, si gana la liquidez), el GMV salta a US$6–11M/año, y sobre esa base sí caben capas de monetización de alto margen — comisión, **ads/destacados de marca**, **market intelligence** (datos de demanda que solo Moder tiene) y servicios financieros. *Ahí* —en el GMV por tienda y en las capas sobre el GMV, no en el conteo de tiendas— está el único camino a una empresa de crecimiento. El techo de 350 clientes no es el techo del negocio si el negocio deja de cobrar por "estar listado" y empieza a cobrar por "vender".
+**La clave que libera el techo de 350.** El número de tiendas está topado (~350), pero el **GMV por tienda no lo está.** Si Moder logra que cada una de esas 350 tiendas venda 30–50 prendas/mes en vez de 10 (es decir, si gana la liquidez), el GMV salta a **CLP 6.300–10.500 millones/año**, y sobre esa base sí caben capas de monetización de alto margen — comisión, **ads/destacados de marca**, **market intelligence** (datos de demanda que solo Moder tiene) y servicios financieros. *Ahí* —en el GMV por tienda y en las capas sobre el GMV, no en el conteo de tiendas— está el único camino a una empresa de crecimiento. El techo de 350 clientes no es el techo del negocio si el negocio deja de cobrar por "estar listado" y empieza a cobrar por "vender".
 
 ### 10.7 Reality check: el techo de 350 tiendas
 
 Combinando el límite de clientes (~350) con la economía:
 
+*(Opex y EBITDA en M CLP.)*
+
 | Caso a 350 tiendas | Opex | EBITDA | Margen | Veredicto |
 |---|---|---|---|---|
-| Base (CAC consumidor pagado), equipo normal | US$550k | **−US$453k** | −103% | Insostenible |
-| Base, micro-equipo | US$250k | **−US$153k** | −35% | Aún pierde |
-| **Full-orgánico (CAC≈0) + micro-equipo** | US$250k | **+US$153k** | +35% | **Micro-negocio rentable** |
-| Full-orgánico + equipo mínimo (2 pers.) | US$120k | **+US$283k** | +64% | *Lifestyle business* sólido |
+| Base (CAC consumidor pagado), equipo normal | 522,5 | **−430,6** | −103% | Insostenible |
+| Base, micro-equipo | 237,5 | **−145,6** | −35% | Aún pierde |
+| **Full-orgánico (CAC≈0) + micro-equipo** | 237,5 | **+145,1** | +35% | **Micro-negocio rentable** |
+| Full-orgánico + equipo mínimo (2 pers.) | 114,0 | **+268,6** | +64% | *Lifestyle business* sólido |
 
-**Conclusión cruda.** Con suscripción pura y techo de 350 tiendas, el *mejor resultado alcanzable* es un **micro-negocio rentable de ~US$150–280k de utilidad anual** —si y solo si la demanda es casi 100% orgánica y el equipo es de 2–3 personas. Es un negocio digno y financiable como tal, pero **estructuralmente incapaz** de ser "la principal plataforma de moda de LatAm" o una empresa de alto crecimiento. Para que 350 tiendas se conviertan en una empresa grande, **el modelo de ingreso debe dejar de ser la suscripción** y pasar a capturar el GMV (que sí escala con la liquidez, no con el conteo de tiendas).
+**Conclusión cruda.** Con suscripción pura y techo de 350 tiendas, el *mejor resultado alcanzable* es un **micro-negocio rentable de ~CLP 145–269 millones de utilidad anual** —si y solo si la demanda es casi 100% orgánica y el equipo es de 2–3 personas. Es un negocio digno y financiable como tal, pero **estructuralmente incapaz** de ser "la principal plataforma de moda de LatAm" o una empresa de alto crecimiento. Para que 350 tiendas se conviertan en una empresa grande, **el modelo de ingreso debe dejar de ser la suscripción** y pasar a capturar el GMV (que sí escala con la liquidez, no con el conteo de tiendas).
 
 ---
 
@@ -518,7 +525,7 @@ Combinando el límite de clientes (~350) con la economía:
 
 > Escrito en primera persona, como haría el CEO. El principio rector: **la liquidez manda; la monetización sigue a la liquidez; el foco vence a la ambición.**
 >
-> **Premisa que lo cambia todo:** si el universo de tiendas pagadoras es "con suerte 350", entonces *jamás* construiré la empresa contando tiendas — el techo de US$442k de ARR está fijado de antemano. Construiré la empresa **maximizando el GMV por tienda y monetizando ese GMV.** 350 tiendas líquidas que venden mucho son una gran empresa; 350 tiendas que pagan US$100 son un micro-negocio. Toda mi estrategia de 5 años se reorienta a esa verdad.
+> **Premisa que lo cambia todo:** si el universo de tiendas pagadoras es "con suerte 350", entonces *jamás* construiré la empresa contando tiendas — el techo de CLP 420 millones de ARR está fijado de antemano. Construiré la empresa **maximizando el GMV por tienda y monetizando ese GMV.** 350 tiendas líquidas que venden mucho son una gran empresa; 350 tiendas que pagan CLP 100.000 son un micro-negocio. Toda mi estrategia de 5 años se reorienta a esa verdad.
 
 ### Año 1 — Ganar la liquidez en un nicho minúsculo (no escalar marcas)
 
@@ -545,7 +552,7 @@ Combinando el límite de clientes (~350) con la economía:
 
 9. **Activar ingresos acoplados al GMV:** comisión madura, **ads/destacados de marca** (alto margen), **market intelligence** (vender a las marcas datos de demanda que solo Moder tiene), y **afiliación**.
 10. **Servicios para la marca (volverse su SO):** analítica, inventario, pagos, fulfillment ligero → costos de cambio reales.
-11. **Recién aquí**, con liquidez y monetización probadas, levantar una ronda de crecimiento. La historia ya no es "1.000 marcas pagando US$100"; es "GMV de US$X creciendo Y%, con 4 fuentes de ingreso y un moat de datos".
+11. **Recién aquí**, con liquidez y monetización probadas, levantar una ronda de crecimiento. La historia ya no es "1.000 marcas pagando CLP 100.000"; es "GMV de CLP X creciendo Y%, con 4 fuentes de ingreso y un moat de datos".
 
 ### Año 4 — Expansión geográfica disciplinada
 
@@ -581,13 +588,13 @@ Combinando el límite de clientes (~350) con la economía:
 
 ## Anexo A — Notas metodológicas y supuestos
 
-**Conversión monetaria.** CLP/USD = 950 (promedio 2025). Sensibilidad: ±10% mueve todas las cifras USD ±10% pero no altera conclusiones.
+**Moneda y conversión.** El modelo está expresado en **pesos chilenos (CLP)**; "M CLP" = millones de pesos. El tipo de cambio CLP/USD = 950 (promedio 2025) se usa **solo** para convertir a pesos los benchmarks publicados en dólares (CPI de Meta/TikTok, niveles de opex de mercado, CAC B2B de referencia, múltiplos de valoración). Sensibilidad: ±10% en el FX mueve esos componentes importados ±10%, pero no altera las conclusiones (el ingreso por suscripción es 100% CLP y no depende del FX).
 
 **Supuestos de unit economics de marca.** Precio prenda CLP 50.000; margen bruto base 55% (sensibilizado 33%/50%/60%). "Recuperar suscripción" = utilidad bruta = CLP 100.000. "ROI 3×" = utilidad bruta = CLP 300.000 (versión neta en Anexo B).
 
 **Supuestos de funnel (consumidor).** Ver tabla §6.1. Nota crítica: el "% de descargas activo" base (22%) es **optimista** frente a la retención D30 de apps de shopping (~5–10% [D]); se justifica solo si Moder logra un producto muy pegajoso. Recomendamos validar con datos propios cuanto antes.
 
-**Supuestos del P&L de Moder.** Opex anual cargado por etapa: 50→US$150k; 100→US$250k; 150→US$320k; 250→US$450k; 350→US$550k. Escenario "micro-equipo" (full-orgánico, §10.7): US$120k–250k. CAC marca (B2B): US$700/450/300 (cons/base/opt). Margen bruto software 75%. Adquisición de consumidor anual ≈ instalaciones necesarias × (1 − % orgánico) × CPI (simplificación: trata las instalaciones requeridas como reposición anual de la base, dado el alto churn; es conservador para bases de baja retención).
+**Supuestos del P&L de Moder.** Opex anual cargado por etapa (M CLP): 50→142,5; 100→237,5; 150→304,0; 250→427,5; 350→522,5. Escenario "micro-equipo" (full-orgánico, §10.7): CLP 114–238 M. CAC marca (B2B): CLP 665.000/427.500/285.000 (cons/base/opt). Margen bruto software 75%. *(Opex y CAC se fijan en USD de referencia —150k/250k/320k/450k/550k y 700/450/300— y se convierten a CLP a FX 950.)* Adquisición de consumidor anual ≈ instalaciones necesarias × (1 − % orgánico) × CPI (simplificación: trata las instalaciones requeridas como reposición anual de la base, dado el alto churn; es conservador para bases de baja retención).
 
 **Niveles de confianza.** [V] verificado adversarialmente; [D] direccional (market research comercial); [M] modelo propio. Las casas de market research difieren significativamente entre sí; las cifras [D] son para magnitud, no precisión.
 
