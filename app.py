@@ -60,14 +60,14 @@ def _load_users():
                 users[name.strip()] = pw_hash.strip()
         if users:
             return users
-    # Fallback for development — will print warning
-    print("⚠️ CURATOR_USERS not set — using default credentials (set env var for production)")
-    default_pw = generate_password_hash("moder2026", method="pbkdf2:sha256")
-    return {
-        "sebastian": default_pw,
-        "antonia": default_pw,
-        "sofia": default_pw,
-    }
+    # Fix seguridad 2026-07-15: antes usaba la contraseña FIJA "moder2026" para 3
+    # usuarios si faltaba CURATOR_USERS → login trivial. Ahora: un solo usuario dev
+    # con contraseña ALEATORIA impresa en logs (nunca predecible; en prod se usa el env var).
+    import secrets
+    random_pw = secrets.token_urlsafe(18)
+    print("⚠️ CURATOR_USERS no seteado — usuario dev 'sebastian' con contraseña ALEATORIA:")
+    print(f"⚠️    {random_pw}   (define CURATOR_USERS en producción)")
+    return {"sebastian": generate_password_hash(random_pw, method="pbkdf2:sha256")}
 
 USERS = _load_users()
 
@@ -93,9 +93,18 @@ def _safe_get_user_id():
     except RuntimeError:
         return "anonymous"
 
-# CSRF note: not needed because SESSION_COOKIE_SAMESITE='Lax' prevents
-# cross-origin POSTs from attaching the session cookie. All state-changing
-# endpoints also require login_required. This is sufficient protection.
+# CSRF (2026-07-15): defensa en capas — SameSite=Lax + login_required + verificación
+# de Origin en métodos que mutan estado. Solo bloquea si el header Origin viene y NO
+# coincide con el host (cross-site real). Same-origin y peticiones sin Origin pasan,
+# así que no rompe el acceso legítimo (tailnet, dominio Render, etc.).
+@app.before_request
+def _csrf_origin_guard():
+    if request.method in ("POST", "PUT", "DELETE", "PATCH"):
+        origin = request.headers.get("Origin")
+        if origin:
+            from urllib.parse import urlparse
+            if urlparse(origin).netloc != request.host:
+                return ("Origen no permitido (CSRF).", 403)
 
 # ─── Config ──────────────────────────────────────────────────────────────
 # Persistent disk on Render (survives redeploys), fallback to local dir
