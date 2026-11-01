@@ -184,12 +184,17 @@
             {% if suggested_brands %}
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <div style="font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px;">Marcas sugeridas</div>
-                <button class="btn btn-primary btn-small" onclick="addAllSuggested()" style="font-size: 11px; padding: 6px 14px;">Agregar todas</button>
+                <div style="display:flex; gap:6px; align-items:center;">
+                    <button class="btn btn-small" id="sugQuitarSel" onclick="hideSelectedBrands()" style="font-size: 11px; padding: 5px 12px; background: #fce4ec; color: #c62828; border: none; display:none;">Quitar seleccionadas (<span id="sugSelCount">0</span>)</button>
+                    <button class="btn btn-small" onclick="hideAllSuggested()" style="font-size: 11px; padding: 5px 12px; background: #fce4ec; color: #c62828; border: none;">Quitar todas</button>
+                    <button class="btn btn-primary btn-small" onclick="addAllSuggested()" style="font-size: 11px; padding: 6px 14px;">Agregar todas</button>
+                </div>
             </div>
             <div class="brand-suggestions" id="suggestedList">
                 {% for brand in suggested_brands %}
                 <div class="brand-suggestion" id="sug_{{ brand.domain | replace('.', '_') | replace('/', '_') }}"
                      data-name="{{ brand.name }}" data-domain="{{ brand.domain }}" data-url="{{ brand.url }}">
+                    <input type="checkbox" class="sug-check" onclick="event.stopPropagation(); updateSugSel()" style="margin-right:10px; width:16px; height:16px; cursor:pointer; flex-shrink:0;" aria-label="Seleccionar {{ brand.name }}">
                     <div onclick="addSuggested(this.parentElement.dataset.name, this.parentElement.dataset.domain, this.parentElement.dataset.url, this.parentElement)" style="flex:1; cursor:pointer;">
                         <strong>{{ brand.name }}</strong>
                         <span class="domain">{{ brand.domain }}</span>
@@ -347,6 +352,42 @@
             });
         }
 
+        // Fix (31-10-2026) — quitar varias sugeridas a la vez. Ocultar es
+        // reversible: "Restaurar N marcas eliminadas" las devuelve todas.
+        function sugDominios(soloMarcadas) {
+            const filas = document.querySelectorAll("#suggestedList .brand-suggestion");
+            return Array.from(filas)
+                .filter(f => !soloMarcadas || (f.querySelector(".sug-check") || {}).checked)
+                .map(f => f.dataset.domain);
+        }
+        function updateSugSel() {
+            const n = sugDominios(true).length;
+            const btn = document.getElementById("sugQuitarSel");
+            document.getElementById("sugSelCount").textContent = n;
+            btn.style.display = n ? "" : "none";
+        }
+        function ocultarVarias(domains) {
+            if (!domains.length) return;
+            document.body.style.opacity = "0.5";
+            document.body.style.pointerEvents = "none";
+            fetch("/hide-brands", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ domains })
+            }).finally(() => location.reload());
+        }
+        function hideSelectedBrands() {
+            const d = sugDominios(true);
+            if (!d.length) return;
+            if (!confirm("¿Quitar " + d.length + " marca" + (d.length > 1 ? "s" : "") + " de las sugeridas?\n\nPuedes recuperarlas con «Restaurar marcas eliminadas».")) return;
+            ocultarVarias(d);
+        }
+        function hideAllSuggested() {
+            const d = sugDominios(false);
+            if (!d.length) return;
+            if (!confirm("¿Quitar las " + d.length + " marcas sugeridas?\n\nPuedes recuperarlas con «Restaurar marcas eliminadas».")) return;
+            ocultarVarias(d);
+        }
         function hideBrand(domain, el) {
             if (!confirm('¿Eliminar esta marca del registro? No aparecerá en las sugerencias.')) return;
             el.style.opacity = '0.3';

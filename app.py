@@ -2741,6 +2741,43 @@ def hide_brand():
     return jsonify({"status": "ok", "hidden_count": len(hidden)})
 
 
+@app.route("/hide-brands", methods=["POST"])
+@login_required
+def hide_brands():
+    """Oculta VARIAS marcas sugeridas en una sola operacion (31-10-2026).
+
+    Antes habia que ir una por una con /hide-brand: una confirmacion y una
+    escritura a Firestore por marca. Esta ruta hace lo mismo para una lista,
+    con una sola lectura y una sola escritura. Es reversible igual que la
+    individual: "Restaurar N marcas eliminadas" llama a /unhide-brands.
+    """
+    country = load_active_country()
+    data = request.get_json(silent=True) or {}
+    domains = data.get("domains", [])
+    if not isinstance(domains, list):
+        return jsonify({"error": "domains debe ser una lista"}), 400
+    domains = [d.strip() for d in domains if isinstance(d, str) and d.strip()]
+    if not domains:
+        return jsonify({"error": "domains vacio"}), 400
+    if len(domains) > 500:
+        return jsonify({"error": "maximo 500 por llamada"}), 400
+
+    hidden = load_hidden_brands(country)
+    nuevas = [d for d in domains if d not in hidden]
+    if nuevas:
+        hidden.extend(nuevas)
+        save_hidden_brands(hidden, country)
+
+    # Igual que /hide-brand: si alguna estaba activa, tambien sale de activas.
+    quitar = set(domains)
+    active = load_active_brands(country)
+    restantes = [b for b in active if b["domain"] not in quitar]
+    if len(restantes) != len(active):
+        save_active_brands(restantes, country)
+
+    return jsonify({"status": "ok", "hidden": len(nuevas), "hidden_count": len(hidden)})
+
+
 @app.route("/unhide-brands", methods=["POST"])
 @login_required
 def unhide_brands():
@@ -3525,6 +3562,11 @@ def upload_to_admin():
     #      `arde`, `parsome`. Estos NO pertenecen a ningún país, son tests
     #      históricos. Los borramos en cualquier upload que tenga country.
     KNOWN_COUNTRY_SUFFIXES = ("_ar", "_cl", "_co", "_mx", "_es")
+    # Sufijos de los OTROS países — se usan para no borrar tiendas ajenas al
+    # país que estamos subiendo (ver el fix del criterio C, más abajo).
+    OTHER_COUNTRY_SUFFIXES = tuple(
+        suf for suf in KNOWN_COUNTRY_SUFFIXES if suf != f"_{country.lower()}"
+    )
     stores_to_delete = []
     country_lower = country.lower()
     country_suffix = f"_{country_lower}"
@@ -3541,8 +3583,26 @@ def upload_to_admin():
             doc_name = str(data.get("name", "")).strip()
             doc_name_lower = doc_name.lower()
 
-            # Criterio C: match por nombre (resuelve slugs inconsistentes)
-            if doc_name_lower in _new_brand_name_lower_to_id:
+            # ¿Este doc pertenece claramente a OTRO país? Dos señales:
+            #   · declara un `country` distinto al que estamos subiendo, o
+            #   · no declara país pero su ID lleva el sufijo de otro país.
+            # Se calcula acá arriba porque el criterio C lo necesita.
+            es_de_otro_pais = bool(doc_country and doc_country != country) or (
+                not doc_country and doc_id.endswith(OTHER_COUNTRY_SUFFIXES)
+            )
+
+            # Criterio C: match por nombre (resuelve slugs inconsistentes).
+            #
+            # Fix 30-08-2026: este criterio se evalúa ANTES que los demás y
+            # antes NO miraba el país. Una tienda de otro país con el mismo
+            # nombre de marca —`cassiopea_ar` con country=AR mientras subimos
+            # CL— se borraba acá y nunca llegaba a la comprobación del final
+            # que la habría salvado ("docs de otro país → NO tocar").
+            # No estaba disparando porque solo CL tiene marcas cargadas; habría
+            # disparado el día que se abra el segundo país, con cualquier marca
+            # que venda en ambos.
+            # Ahora el match por nombre solo borra si el doc NO es de otro país.
+            if doc_name_lower in _new_brand_name_lower_to_id and not es_de_otro_pais:
                 stores_to_delete.append(doc_id)
                 continue
 
