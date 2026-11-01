@@ -319,18 +319,8 @@
             })
             .then(data => {
                 if (data.error) { alert(data.error); el.style.opacity = '1'; return; }
-                el.classList.add('added');
-                el.style.opacity = '1';
-                el.style.background = '#e8f5e9';
-                const addBtn = el.querySelector('.add-btn');
-                if (addBtn) addBtn.textContent = '✓';
-                // Add chip to active brands area
-                const chip = document.createElement('div');
-                chip.className = 'brand-chip active';
-                chip.dataset.domain = domain;
-                chip.textContent = name + ' ✓';
-                chip.onclick = function() { toggleBrand(chip, domain); };
-                document.getElementById('activeBrands').appendChild(chip);
+                // 31-10-2026: pasa a Marcas activas y sale de sugeridas
+                location.reload();
             })
             .catch(err => { console.error('Error adding brand:', err); el.style.opacity = '1'; alert('Error: ' + err.message); });
         }
@@ -345,12 +335,8 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ domain })
             }).then(() => {
-                el.remove();
-                // Check if brand list is now empty
-                const remaining = document.querySelectorAll('#activeBrands .brand-chip');
-                if (remaining.length === 0) {
-                    location.reload(); // Refresh to show "Ninguna marca" message
-                }
+                // 31-10-2026: vuelve a Marcas sugeridas → recargar para verla ahí
+                location.reload();
             });
         }
 

@@ -306,6 +306,33 @@ def save_custom_suggested(brands, country_code=None, user_id=None):
         except Exception:
             pass
 
+def _norm_domain(u):
+    """'https://www.Alos.cl/tienda' -> 'alos.cl'. Para comparar links."""
+    u = (u or "").strip().lower()
+    if "://" in u:
+        u = u.split("://", 1)[1]
+    u = u.split("/", 1)[0].split("?", 1)[0].rstrip(".")
+    return u[4:] if u.startswith("www.") else u
+
+def _return_to_suggested(brands, country):
+    """Lo que sale de Marcas activas vuelve a Marcas sugeridas: una marca
+    siempre esta en una de las dos secciones, nunca en ambas ni en ninguna."""
+    if not brands:
+        return
+    custom = load_custom_suggested(country)
+    ya = set(_norm_domain(b.get("domain")) for b in custom)
+    for b in brands:
+        d = _norm_domain(b.get("domain") or b.get("url"))
+        if d and d not in ya:
+            custom.append({"name": b.get("name", d), "domain": b.get("domain") or d,
+                           "url": b.get("url") or ("https://" + d)})
+            ya.add(d)
+    save_custom_suggested(custom, country)
+    salen = set(_norm_domain(b.get("domain")) for b in brands)
+    hidden = load_hidden_brands(country)
+    if any(_norm_domain(h) in salen for h in hidden):
+        save_hidden_brands([h for h in hidden if _norm_domain(h) not in salen], country)
+
 def _visible_suggested(country, active_brands=None):
     """Lo que se MUESTRA en sugeridas: las precargadas del pais + las propias,
     sin duplicados, sin las activas y sin las ocultas. Es la unica fuente de
@@ -313,11 +340,11 @@ def _visible_suggested(country, active_brands=None):
     exactamente lo que se ve (antes reactivaba tambien las ocultas)."""
     if active_brands is None:
         active_brands = load_active_brands(country)
-    active_domains = set(b["domain"] for b in active_brands)
-    hidden_domains = set(load_hidden_brands(country))
+    active_domains = set(_norm_domain(b["domain"]) for b in active_brands)
+    hidden_domains = set(_norm_domain(h) for h in load_hidden_brands(country))
     vistos, salida = set(), []
     for b in SUGGESTED_BRANDS_BY_COUNTRY.get(country, []) + load_custom_suggested(country):
-        d = b.get("domain")
+        d = _norm_domain(b.get("domain"))
         if not d or d in vistos or d in active_domains or d in hidden_domains:
             continue
         vistos.add(d)
@@ -336,7 +363,7 @@ def load_active_brands(country_code=None, user_id=None):
     uid = user_id or get_user_id()
     cc = country_code or load_active_country()
     if not cc:
-        return DEFAULT_BRANDS
+        return list(DEFAULT_BRANDS)
     # Firestore primero (per user+country)
     fs = load_brands_firestore(f"{uid}_{cc}")
     if fs is not None:
@@ -351,7 +378,7 @@ def load_active_brands(country_code=None, user_id=None):
     if os.path.exists(legacy):
         with open(legacy) as f:
             return json.load(f)
-    return DEFAULT_BRANDS
+    return list(DEFAULT_BRANDS)
 
 def save_active_brands(brands, country_code=None, user_id=None):
     """Save active brands per user+country"""
@@ -2723,23 +2750,21 @@ def suggest_brand():
         return jsonify({"error": "Nombre y URL requeridos"}), 400
     if not url.startswith("http"):
         url = "https://" + url
-    from urllib.parse import urlparse
-    domain = urlparse(url).netloc.replace("www.", "")
-    if not domain:
-        return jsonify({"error": "URL invalida"}), 400
+    domain = _norm_domain(url)
+    if not domain or "." not in domain:
+        return jsonify({"error": "El link no es valido"}), 400
 
-    if any(b["domain"] == domain for b in load_active_brands(country)):
-        return jsonify({"error": "Esa marca ya esta activa"}), 400
+    # Un link = una marca. Si ya esta en alguna seccion, no se agrega.
+    active = load_active_brands(country)
+    dup = next((b for b in active if _norm_domain(b["domain"]) == domain), None)
+    if dup:
+        return jsonify({"error": f"Esa marca ya existe: {dup.get('name', domain)} ({domain}) esta en Marcas activas."}), 400
+    dup = next((b for b in _visible_suggested(country, active) if _norm_domain(b.get("domain")) == domain), None)
+    if dup:
+        return jsonify({"error": f"Esa marca ya existe: {dup.get('name', domain)} ({domain}) esta en Marcas sugeridas."}), 400
 
-    custom = load_custom_suggested(country)
-    if not any(b.get("domain") == domain for b in custom):
-        custom.append({"name": name, "domain": domain, "url": url})
-        save_custom_suggested(custom, country)
-
-    # Si la habias ocultado antes, agregarla de nuevo la vuelve a mostrar.
-    hidden = load_hidden_brands(country)
-    if domain in hidden:
-        save_hidden_brands([d for d in hidden if d != domain], country)
+    # Nueva (o borrada antes con el basurero): va a sugeridas.
+    _return_to_suggested([{"name": name, "domain": domain, "url": url}], country)
 
     return jsonify({"status": "ok", "brand": {"name": name, "domain": domain, "url": url}})
 
@@ -2829,8 +2854,10 @@ def remove_brand():
     data = request.get_json(silent=True) or {}
     domain = data.get("domain", "")
     active = load_active_brands(country)
+    salen = [b for b in active if b["domain"] == domain]
     active = [b for b in active if b["domain"] != domain]
     save_active_brands(active, country)
+    _return_to_suggested(salen, country)  # 31-10-2026: vuelve a sugeridas
     return jsonify({"status": "ok", "count": len(active)})
 
 
@@ -2839,7 +2866,9 @@ def remove_brand():
 def remove_all_brands():
     """Remove all brands from active list and clear curation session"""
     country = load_active_country()
+    salen = load_active_brands(country)
     save_active_brands([], country)
+    _return_to_suggested(salen, country)  # 31-10-2026: vuelven a sugeridas
     # Clear curation session and cache
     clear_curation_session(country)
     return jsonify({"status": "ok", "count": 0})
@@ -3906,6 +3935,9 @@ def reset():
     uid = get_user_id()
     country = load_active_country()
     clear_curation_session(country, uid)
+    # 31-10-2026: las activas vuelven a sugeridas (no se pierden marcas)
+    if country:
+        _return_to_suggested(load_active_brands(country, uid), country)
     # Clear per-user brands file + Firestore
     if country:
         brands_path = _brands_file_for_user(country, uid)
