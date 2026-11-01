@@ -186,6 +186,7 @@
                 <div style="font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px;">Marcas sugeridas</div>
                 <div style="display:flex; gap:6px; align-items:center;">
                     <button class="btn btn-small" id="sugQuitarSel" onclick="hideSelectedBrands()" style="font-size: 11px; padding: 5px 12px; background: #fce4ec; color: #c62828; border: none; display:none;">Quitar seleccionadas (<span id="sugSelCount">0</span>)</button>
+                    <button class="btn btn-primary btn-small" id="sugActivarSel" onclick="activateSelectedBrands()" style="font-size: 11px; padding: 6px 14px; display:none;">Activar seleccionadas (<span id="sugActCount">0</span>)</button>
                     <button class="btn btn-small" onclick="hideAllSuggested()" style="font-size: 11px; padding: 5px 12px; background: #fce4ec; color: #c62828; border: none;">Quitar todas</button>
                     <button class="btn btn-primary btn-small" onclick="addAllSuggested()" style="font-size: 11px; padding: 6px 14px;">Agregar todas</button>
                 </div>
@@ -208,7 +209,7 @@
             </div>
             {% else %}
             <div style="text-align: center; padding: 16px; font-size: 13px; color: #aaa;">
-                Todas las marcas sugeridas ya están activas
+                No hay marcas sugeridas. Agrega una nueva arriba.
             </div>
             {% endif %}
             {% if hidden_count > 0 %}
@@ -284,7 +285,8 @@
             const name = document.getElementById('brandName').value.trim();
             const url = document.getElementById('brandUrl').value.trim();
             if (!name || !url) { alert('Ingresa nombre y URL'); return; }
-            fetch('/add-brand', {
+            // 31-10-2026 — ya no la activa: la deja en Marcas sugeridas.
+            fetch('/suggest-brand', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, url })
@@ -365,6 +367,27 @@
             const btn = document.getElementById("sugQuitarSel");
             document.getElementById("sugSelCount").textContent = n;
             btn.style.display = n ? "" : "none";
+            document.getElementById("sugActCount").textContent = n;
+            document.getElementById("sugActivarSel").style.display = n ? "" : "none";
+        }
+        // Activar varias sugeridas de una vez (31-10-2026): pasan a Marcas
+        // activas y entran al próximo crawl / curado.
+        function activateSelectedBrands() {
+            const filas = Array.from(document.querySelectorAll("#suggestedList .brand-suggestion"))
+                .filter(f => (f.querySelector(".sug-check") || {}).checked);
+            if (!filas.length) return;
+            const brands = filas.map(f => ({ name: f.dataset.name, domain: f.dataset.domain, url: f.dataset.url }));
+            document.body.style.opacity = "0.5";
+            document.body.style.pointerEvents = "none";
+            fetch("/activate-brands", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ brands })
+            })
+            .then(r => r.json())
+            .then(data => { if (data.error) alert(data.error); })
+            .catch(err => alert("Error al activar: " + err.message))
+            .finally(() => location.reload());
         }
         function ocultarVarias(domains) {
             if (!domains.length) return;

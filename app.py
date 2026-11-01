@@ -258,6 +258,72 @@ def save_hidden_brands(domains, country_code=None, user_id=None):
         except Exception:
             pass
 
+# ── Marcas sugeridas propias (31-10-2026) ────────────────────────────────
+# "Agregar marca nueva" ya no la activa directo: la deja en SUGERIDAS, y
+# desde ahi se eligen con casillas cuales activar y curar. Se guardan igual
+# que las ocultas: Firestore curator/custom_suggested_{uid}_{cc} + archivo local.
+def _custom_suggested_file(country_code, user_id=None):
+    uid = user_id or get_user_id()
+    return os.path.join(DATA_DIR, f"custom_suggested_{uid}_{country_code}.json")
+
+def load_custom_suggested(country_code=None, user_id=None):
+    uid = user_id or get_user_id()
+    cc = country_code or load_active_country()
+    if not cc:
+        return []
+    db = _get_db_safe()
+    if db:
+        try:
+            doc = db.collection("curator").document(f"custom_suggested_{uid}_{cc}").get()
+            if doc.exists:
+                return doc.to_dict().get("brands", [])
+        except Exception:
+            pass
+    path = _custom_suggested_file(cc, uid)
+    if os.path.exists(path):
+        with open(path) as fh:
+            return json.load(fh)
+    return []
+
+def save_custom_suggested(brands, country_code=None, user_id=None):
+    uid = user_id or get_user_id()
+    cc = country_code or load_active_country()
+    if not cc:
+        return
+    path = _custom_suggested_file(cc, uid)
+    tmp_path = path + ".tmp"
+    with open(tmp_path, "w") as fh:
+        json.dump(brands, fh, ensure_ascii=False)
+        fh.flush()
+        os.fsync(fh.fileno())
+    os.replace(tmp_path, path)
+    db = _get_db_safe()
+    if db:
+        try:
+            db.collection("curator").document(f"custom_suggested_{uid}_{cc}").set({
+                "brands": brands, "updated_at": firestore_timestamp()
+            })
+        except Exception:
+            pass
+
+def _visible_suggested(country, active_brands=None):
+    """Lo que se MUESTRA en sugeridas: las precargadas del pais + las propias,
+    sin duplicados, sin las activas y sin las ocultas. Es la unica fuente de
+    verdad: la usan la pantalla y "Agregar todas", para que el boton active
+    exactamente lo que se ve (antes reactivaba tambien las ocultas)."""
+    if active_brands is None:
+        active_brands = load_active_brands(country)
+    active_domains = set(b["domain"] for b in active_brands)
+    hidden_domains = set(load_hidden_brands(country))
+    vistos, salida = set(), []
+    for b in SUGGESTED_BRANDS_BY_COUNTRY.get(country, []) + load_custom_suggested(country):
+        d = b.get("domain")
+        if not d or d in vistos or d in active_domains or d in hidden_domains:
+            continue
+        vistos.add(d)
+        salida.append(b)
+    return salida
+
 def _get_db_safe():
     """Get Firestore db, return None if unavailable"""
     try:
@@ -2616,10 +2682,8 @@ def index():
             products = fs_products
     active_brands = load_active_brands(country)
     has_cache = products is not None and len(products) > 0
-    all_suggested = SUGGESTED_BRANDS_BY_COUNTRY.get(country, [])
-    active_domains = set(b["domain"] for b in active_brands)
     hidden_domains = set(load_hidden_brands(country))
-    suggested = [b for b in all_suggested if b["domain"] not in active_domains and b["domain"] not in hidden_domains]
+    suggested = _visible_suggested(country, active_brands)
     return render_template("index.html",
                            selecting_country=False,
                            countries=COUNTRIES,
@@ -2647,6 +2711,66 @@ def update_brands():
     return jsonify({"status": "ok", "count": len(brands)})
 
 
+@app.route("/suggest-brand", methods=["POST"])
+@login_required
+def suggest_brand():
+    """Agrega una marca nueva a SUGERIDAS (no a activas). 31-10-2026."""
+    country = load_active_country()
+    data = request.get_json(silent=True) or {}
+    name = data.get("name", "").strip().upper()
+    url = data.get("url", "").strip()
+    if not name or not url:
+        return jsonify({"error": "Nombre y URL requeridos"}), 400
+    if not url.startswith("http"):
+        url = "https://" + url
+    from urllib.parse import urlparse
+    domain = urlparse(url).netloc.replace("www.", "")
+    if not domain:
+        return jsonify({"error": "URL invalida"}), 400
+
+    if any(b["domain"] == domain for b in load_active_brands(country)):
+        return jsonify({"error": "Esa marca ya esta activa"}), 400
+
+    custom = load_custom_suggested(country)
+    if not any(b.get("domain") == domain for b in custom):
+        custom.append({"name": name, "domain": domain, "url": url})
+        save_custom_suggested(custom, country)
+
+    # Si la habias ocultado antes, agregarla de nuevo la vuelve a mostrar.
+    hidden = load_hidden_brands(country)
+    if domain in hidden:
+        save_hidden_brands([d for d in hidden if d != domain], country)
+
+    return jsonify({"status": "ok", "brand": {"name": name, "domain": domain, "url": url}})
+
+
+@app.route("/activate-brands", methods=["POST"])
+@login_required
+def activate_brands():
+    """Activa VARIAS sugeridas de una vez, para crawlear y curar. 31-10-2026."""
+    country = load_active_country()
+    data = request.get_json(silent=True) or {}
+    brands = data.get("brands", [])
+    if not isinstance(brands, list) or not brands:
+        return jsonify({"error": "brands vacio"}), 400
+    active = load_active_brands(country)
+    active_domains = set(b["domain"] for b in active)
+    added = 0
+    for b in brands[:500]:
+        if not isinstance(b, dict):
+            continue
+        d = str(b.get("domain", "")).strip()
+        if not d or d in active_domains:
+            continue
+        active.append({"name": str(b.get("name", d)).strip(), "domain": d,
+                       "url": str(b.get("url") or ("https://" + d)).strip()})
+        active_domains.add(d)
+        added += 1
+    if added:
+        save_active_brands(active, country)
+    return jsonify({"status": "ok", "added": added, "total": len(active)})
+
+
 @app.route("/add-all-suggested", methods=["POST"])
 @login_required
 def add_all_suggested():
@@ -2654,7 +2778,7 @@ def add_all_suggested():
     country = load_active_country()
     active = load_active_brands(country)
     active_domains = set(b["domain"] for b in active)
-    suggested = SUGGESTED_BRANDS_BY_COUNTRY.get(country, [])
+    suggested = _visible_suggested(country, active)
     added = 0
     for brand in suggested:
         if brand["domain"] not in active_domains:
