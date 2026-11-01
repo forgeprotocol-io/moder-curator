@@ -180,6 +180,12 @@
                 <input type="text" id="brandUrl" placeholder="URL (ej: scalperscompany.com)">
                 <button class="btn btn-primary btn-small" onclick="addCustomBrand()">+</button>
             </div>
+            <div style="display:flex; align-items:center; gap:10px; margin:-4px 0 12px;">
+                <button class="btn btn-small" id="excelBtn" onclick="document.getElementById('excelFile').click()" style="font-size: 12px; padding: 7px 14px; background: white; color: #1c1c1e; border: 1.5px solid #1c1c1e;">Cargar Excel</button>
+                <span style="font-size: 11px; color: #999;">Columna A: nombre de la tienda · Columna B: link</span>
+                <input type="file" id="excelFile" accept=".xlsx,.xlsm" style="display:none" onchange="importExcel(this)">
+            </div>
+            <div id="excelReport" style="display:none; margin-bottom: 12px; border: 1px solid #eee; border-radius: 12px; padding: 14px; font-size: 13px;"></div>
             <hr class="section-divider">
             {% if suggested_brands %}
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -296,6 +302,82 @@
                 if (data.error) { alert(data.error); return; }
                 location.reload();
             });
+        }
+
+        // Cargar marcas desde Excel (31-10-2026): el robot visita cada link y
+        // solo agrega a sugeridas las que responden. Informe fila por fila.
+        function importExcel(input) {
+            const file = input.files && input.files[0];
+            input.value = '';
+            if (!file) return;
+            const box = document.getElementById('excelReport');
+            const btn = document.getElementById('excelBtn');
+            btn.disabled = true;
+            btn.textContent = 'Revisando links…';
+            box.style.display = '';
+            box.textContent = 'Leyendo «' + file.name + '» y abriendo cada link. Puede tardar hasta un minuto.';
+            const fd = new FormData();
+            fd.append('file', file);
+            fetch('/import-brands-excel', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) { box.textContent = '⚠ ' + data.error; return; }
+                    renderExcelReport(box, data);
+                })
+                .catch(err => { box.textContent = '⚠ No se pudo cargar: ' + err.message; })
+                .finally(() => { btn.disabled = false; btn.textContent = 'Cargar Excel'; });
+        }
+        function renderExcelReport(box, data) {
+            const r = data.resumen;
+            const ETQ = { ok: ['Agregada', '#2e7d32'], aviso: ['Agregada · revisar', '#b26a00'],
+                          error: ['Link con error', '#c62828'], existe: ['Ya existe', '#666'], repetida: ['Repetida', '#666'] };
+            while (box.firstChild) box.removeChild(box.firstChild);
+            const h = document.createElement('div');
+            h.style.cssText = 'font-weight:600; margin-bottom:8px;';
+            h.textContent = data.agregadas + ' marca' + (data.agregadas === 1 ? '' : 's') + ' agregada' + (data.agregadas === 1 ? '' : 's') + ' a sugeridas';
+            box.appendChild(h);
+            const sub = document.createElement('div');
+            sub.style.cssText = 'color:#666; font-size:12px; margin-bottom:10px;';
+            sub.textContent = [r.error ? r.error + ' con link incorrecto o caído' : '', r.aviso ? r.aviso + ' para revisar' : '',
+                               r.existe ? r.existe + ' ya existían' : '', r.repetida ? r.repetida + ' repetidas en la planilla' : '']
+                               .filter(Boolean).join(' · ') || 'Todos los links funcionan.';
+            box.appendChild(sub);
+            // Primero lo que hay que corregir
+            const orden = { error: 0, aviso: 1, existe: 2, repetida: 3, ok: 4 };
+            const filas = data.filas.slice().sort((a, b) => orden[a.estado] - orden[b.estado] || a.fila - b.fila);
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'max-height:320px; overflow:auto;';
+            const t = document.createElement('table');
+            t.style.cssText = 'width:100%; border-collapse:collapse; font-size:12px;';
+            const head = t.insertRow();
+            ['Fila', 'Tienda', 'Link', 'Resultado'].forEach(x => {
+                const th = document.createElement('th'); th.textContent = x;
+                th.style.cssText = 'text-align:left; color:#999; font-weight:500; padding:4px 6px; border-bottom:1px solid #eee; position:sticky; top:0; background:white;';
+                head.appendChild(th);
+            });
+            filas.forEach(f => {
+                const tr = t.insertRow();
+                [String(f.fila), f.nombre, f.link].forEach(x => {
+                    const td = tr.insertCell(); td.textContent = x;
+                    td.style.cssText = 'padding:5px 6px; border-bottom:1px solid #f5f5f5; word-break:break-all;';
+                });
+                const td = tr.insertCell();
+                td.style.cssText = 'padding:5px 6px; border-bottom:1px solid #f5f5f5;';
+                const b = document.createElement('div');
+                b.textContent = ETQ[f.estado][0];
+                b.style.cssText = 'font-weight:600; color:' + ETQ[f.estado][1];
+                const d = document.createElement('div');
+                d.textContent = f.detalle; d.style.color = '#888';
+                td.appendChild(b); if (f.estado !== 'ok') td.appendChild(d);
+            });
+            wrap.appendChild(t);
+            box.appendChild(wrap);
+            const ok = document.createElement('button');
+            ok.className = 'btn btn-primary btn-small';
+            ok.style.cssText = 'margin-top:10px; font-size:12px; padding:7px 14px;';
+            ok.textContent = data.agregadas ? 'Ver en Marcas sugeridas' : 'Cerrar';
+            ok.onclick = () => location.reload();
+            box.appendChild(ok);
         }
 
         function addAllSuggested() {

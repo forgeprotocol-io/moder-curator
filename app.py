@@ -2769,6 +2769,115 @@ def suggest_brand():
     return jsonify({"status": "ok", "brand": {"name": name, "domain": domain, "url": url}})
 
 
+# ── Cargar marcas desde Excel (31-10-2026) ──────────────────────────────
+# Columna A = nombre, columna B = link. Cada link se revisa de verdad (se
+# visita): solo las que responden bien van a Marcas sugeridas; el resto vuelve
+# en un informe fila por fila para corregir.
+def _revisar_link(url, domain):
+    """-> (estado, detalle). estado: 'ok' | 'aviso' | 'error'."""
+    try:
+        r = requests.get(url, headers=HEADERS, timeout=12, allow_redirects=True, stream=True)
+        code = r.status_code
+        final = _norm_domain(r.url)
+        r.close()
+    except requests.exceptions.SSLError:
+        return "error", "Certificado de seguridad (https) invalido"
+    except requests.exceptions.Timeout:
+        return "error", "No respondio en 12 segundos"
+    except requests.exceptions.TooManyRedirects:
+        return "error", "Redirige en circulo (demasiadas redirecciones)"
+    except requests.exceptions.ConnectionError:
+        return "error", "El sitio no existe o no responde (dominio caido o mal escrito)"
+    except Exception as e:
+        return "error", f"Error al abrir el link: {type(e).__name__}"
+    if code in (401, 403, 429, 503):
+        return "aviso", f"Respondio {code}: el sitio bloquea robots, puede costar crawlearlo"
+    if code >= 400:
+        return "error", f"El link responde error {code}" + (" (pagina no encontrada)" if code == 404 else "")
+    if final and final != domain and not final.endswith("." + domain) and not domain.endswith("." + final):
+        return "aviso", f"Redirige a otro dominio: {final}"
+    return "ok", "Funciona"
+
+
+@app.route("/import-brands-excel", methods=["POST"])
+@login_required
+def import_brands_excel():
+    from concurrent.futures import ThreadPoolExecutor
+    country = load_active_country()
+    if not country:
+        return jsonify({"error": "Primero elige un pais"}), 400
+    f = request.files.get("file")
+    if not f or not f.filename:
+        return jsonify({"error": "No llego ningun archivo"}), 400
+    if not f.filename.lower().endswith((".xlsx", ".xlsm")):
+        return jsonify({"error": "El archivo debe ser Excel .xlsx (si es .xls o .csv, abrelo en Excel y guardalo como .xlsx)"}), 400
+    data = f.read(5 * 1024 * 1024 + 1)
+    if len(data) > 5 * 1024 * 1024:
+        return jsonify({"error": "El archivo pesa mas de 5 MB"}), 400
+    try:
+        wb = openpyxl.load_workbook(io.BytesIO(data), read_only=True, data_only=True)
+        ws = wb.worksheets[0]
+        filas = [(i, r[0] if len(r) > 0 else None, r[1] if len(r) > 1 else None)
+                 for i, r in enumerate(ws.iter_rows(values_only=True), start=1)]
+        wb.close()
+    except Exception:
+        return jsonify({"error": "No se pudo leer el Excel. Revisa que no este danado ni protegido con clave."}), 400
+
+    filas = [(i, ("" if a is None else str(a)).strip(), ("" if b is None else str(b)).strip())
+             for i, a, b in filas if not (a in (None, "") and b in (None, ""))]
+    # Encabezado: si la primera fila no trae un link (ej. "Tienda | Link"), se omite
+    if filas and "." not in filas[0][2]:
+        filas = filas[1:]
+    if not filas:
+        return jsonify({"error": "La planilla esta vacia (columna A: nombre, columna B: link)"}), 400
+    if len(filas) > 500:
+        return jsonify({"error": f"La planilla tiene {len(filas)} filas; el maximo es 500 por carga"}), 400
+
+    active = load_active_brands(country)
+    en_activas = {_norm_domain(b["domain"]): b.get("name", "") for b in active}
+    en_sugeridas = {_norm_domain(b.get("domain")): b.get("name", "") for b in _visible_suggested(country, active)}
+
+    informe, por_revisar, vistos = [], [], {}
+    for fila, nombre, link in filas:
+        item = {"fila": fila, "nombre": nombre, "link": link}
+        url = link if link.lower().startswith("http") else "https://" + link
+        dom = _norm_domain(url)
+        if not nombre and not link:
+            continue
+        if not link:
+            item.update(estado="error", detalle="Falta el link (columna B)")
+        elif not nombre:
+            item.update(estado="error", detalle="Falta el nombre (columna A)")
+        elif " " in dom or "." not in dom or len(dom.rsplit(".", 1)[-1]) < 2:
+            item.update(estado="error", detalle="El link esta mal escrito")
+        elif dom in vistos:
+            item.update(estado="repetida", detalle=f"Repetida en la planilla (fila {vistos[dom]})")
+        elif dom in en_activas:
+            item.update(estado="existe", detalle=f"Ya existe en Marcas activas ({en_activas[dom]})")
+        elif dom in en_sugeridas:
+            item.update(estado="existe", detalle=f"Ya existe en Marcas sugeridas ({en_sugeridas[dom]})")
+        else:
+            item.update(url=url, domain=dom)
+            por_revisar.append(item)
+        if dom and dom not in vistos:
+            vistos[dom] = fila
+        informe.append(item)
+
+    with ThreadPoolExecutor(max_workers=12) as ex:
+        resultados = list(ex.map(lambda it: _revisar_link(it["url"], it["domain"]), por_revisar))
+    nuevas = []
+    for it, (estado, detalle) in zip(por_revisar, resultados):
+        it.update(estado=estado, detalle=detalle)
+        if estado in ("ok", "aviso"):
+            nuevas.append({"name": it["nombre"].upper(), "domain": it["domain"], "url": it["url"]})
+    _return_to_suggested(nuevas, country)
+
+    for it in informe:
+        it.pop("url", None); it.pop("domain", None)
+    resumen = {k: sum(1 for it in informe if it["estado"] == k) for k in ("ok", "aviso", "error", "existe", "repetida")}
+    return jsonify({"status": "ok", "agregadas": len(nuevas), "resumen": resumen, "filas": informe})
+
+
 @app.route("/activate-brands", methods=["POST"])
 @login_required
 def activate_brands():
