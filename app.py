@@ -3253,6 +3253,25 @@ def action():
                     session["rejected"].append(url)
             save_session(session)
             return jsonify({"status": "ok", "skipped_brand": brand_to_skip})
+    elif act == "accept_brand":
+        # 31-10-2026 — AGREGAR todas las prendas que quedan de una marca.
+        # Respeta lo ya decidido: lo rechazado a mano sigue rechazado.
+        brand_to_accept = data.get("brand", "")
+        if brand_to_accept:
+            country = load_active_country()
+            products = _get_cached_products(country) or []
+            previous_urls = set(_norm_url(u) for u in session.get("previous_urls", []))
+            processed = set(_norm_url(p.get("product_url", "")) for p in session.get("accepted", []))
+            processed.update(_norm_url(u) for u in session.get("rejected", []))
+            added = 0
+            for p in products:
+                url = _norm_url(p.get("product_url", ""))
+                if p.get("brand") == brand_to_accept and url and url not in previous_urls and url not in processed:
+                    session["accepted"].append({k: p.get(k, "") for k in ("product_url", "brand", "name", "category", "tags", "price")})
+                    processed.add(url)
+                    added += 1
+            save_session(session)
+            return jsonify({"status": "ok", "accepted_brand": brand_to_accept, "added": added})
     elif act == "finish":
         uid = get_user_id()
         country = load_active_country()

@@ -236,6 +236,9 @@
             <button class="btn" id="undoBtn" onclick="undoLastAction()" style="background:white; color:#999; border:1px solid #eee; padding:10px; font-size:12px; flex:0 0 auto; display:none;">
                 ↩ Deshacer
             </button>
+            <button class="btn" id="acceptBrandBtn" onclick="acceptWholeBrand()" style="background:white; color:#1c1c1e; border:1px solid #1c1c1e; padding:12px; font-size:13px;">
+                ✓ Agregar marca ({{ product.brand }})
+            </button>
             <button class="btn" id="skipBrandBtn" onclick="doAction('skip_brand')" style="background:#f5f5f5; color:#666; border:none; padding:12px; font-size:13px;">
                 ⏭ Saltar marca ({{ product.brand }})
             </button>
@@ -599,6 +602,8 @@
 
                 const skipBtn = document.getElementById('skipBrandBtn');
                 if (skipBtn) skipBtn.textContent = '⏭ Saltar marca (' + (p.brand || 'marca') + ')';
+                const accBrandBtn = document.getElementById('acceptBrandBtn');
+                if (accBrandBtn) accBrandBtn.textContent = '✓ Agregar marca (' + (p.brand || 'marca') + ')';
 
                 requestAnimationFrame(() => {
                     card.style.transition = '';
@@ -636,6 +641,41 @@
                         window.location.href = curateUrl;
                     });
             }
+        }
+
+        // 31-10-2026 — agrega todas las prendas que quedan de la marca actual
+        // y pasa a la siguiente marca. Antes espera que se guarden las acciones
+        // pendientes, para no pisar un rechazo recién hecho.
+        function acceptWholeBrand() {
+            if (_actionLock) return;
+            const brand = product.brand;
+            if (!brand) return;
+            if (!confirm('¿Agregar todas las prendas que quedan de ' + brand + ' y pasar a la siguiente marca?')) return;
+            _actionLock = true;
+            document.body.style.opacity = '0.5';
+            document.body.style.pointerEvents = 'none';
+            const esperarCola = (intentos) => new Promise(res => {
+                const tick = (n) => {
+                    if (actionQueue.length === 0 || n <= 0) return res();
+                    syncQueue();
+                    setTimeout(() => tick(n - 1), 300);
+                };
+                tick(intentos);
+            });
+            esperarCola(50)
+                .then(() => fetch('/action', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'accept_brand', brand })
+                }))
+                .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                .then(() => { window.location.href = '/curate'; })
+                .catch(err => {
+                    _actionLock = false;
+                    document.body.style.opacity = '';
+                    document.body.style.pointerEvents = '';
+                    alert('No se pudo agregar la marca: ' + err.message);
+                });
         }
 
         function cancelAndReset() {
