@@ -428,8 +428,17 @@ def is_crawl_allowed(url, user_agent="*"):
         robots_url = f"{parsed.scheme}://{domain}/robots.txt"
         rp = RobotFileParser()
         rp.set_url(robots_url)
-        rp.read()
-        allowed = rp.can_fetch("*", url)
+        # Fix (03-11-2026): rp.read() pedia el archivo como "Python-urllib";
+        # Cloudflare responde 403 a esa firma y robotparser lo toma como
+        # "prohibido todo" (minestudio.sumupstore.com salia bloqueada sin que
+        # su robots.txt lo dijera). Se pide con los HEADERS del crawl y se
+        # aplica RFC 9309: 4xx = sin restricciones; solo un 200 se interpreta.
+        r = requests.get(robots_url, headers=HEADERS, timeout=10, allow_redirects=True)
+        if r.status_code == 200:
+            rp.parse(r.text.splitlines())
+            allowed = rp.can_fetch("*", url)
+        else:
+            allowed = True
         _robots_cache[domain] = (allowed, now)
         return allowed
     except Exception:
@@ -1430,6 +1439,13 @@ def crawl_brand(brand, progress_callback=None):
     # Also handles 403 Cloudflare blocks by trying the alternate www variant.
     try:
         test_resp = requests.get(brand["url"], headers=HEADERS, timeout=10, allow_redirects=True)
+        if _es_desafio_antibots(test_resp):
+            msg = f"⚠ {brand['name']}: protegida contra robots (Cloudflare) — no se puede crawlear"
+            if progress_callback:
+                progress_callback(msg)
+            print(f"  🛡 {brand['name']}: Cloudflare challenge, se omite")
+            log_error_to_firestore("antibot_challenge", msg, {"domain": brand.get("domain", "")})
+            return []
         if test_resp.status_code == 403:
             # Try alternate www variant
             if "://www." in brand["url"]:
@@ -2864,12 +2880,26 @@ def suggest_brand():
 # Columna A = nombre, columna B = link. Cada link se revisa de verdad (se
 # visita): solo las que responden bien van a Marcas sugeridas; el resto vuelve
 # en un informe fila por fila para corregir.
+def _es_desafio_antibots(resp):
+    """True si la respuesta es un desafio anti-robots (Cloudflare "Just a
+    moment..."). Esas tiendas no se pueden crawlear; se informa, no se evade.
+    03-11-2026 (minestudio.sumupstore.com)."""
+    try:
+        if (resp.headers.get("cf-mitigated") or "").lower() == "challenge":
+            return True
+        return resp.status_code in (403, 503) and "cloudflare" in (resp.headers.get("server") or "").lower() \
+            and "challenge" in (resp.headers.get("content-security-policy") or "") + (resp.headers.get("cf-chl-bypass") or "")
+    except Exception:
+        return False
+
+
 def _revisar_link(url, domain):
     """-> (estado, detalle). estado: 'ok' | 'aviso' | 'error'."""
     try:
         r = requests.get(url, headers=HEADERS, timeout=12, allow_redirects=True, stream=True)
         code = r.status_code
         final = _norm_domain(r.url)
+        desafio = _es_desafio_antibots(r)
         r.close()
     except requests.exceptions.SSLError:
         return "error", "Certificado de seguridad (https) invalido"
@@ -2881,6 +2911,9 @@ def _revisar_link(url, domain):
         return "error", "El sitio no existe o no responde (dominio caido o mal escrito)"
     except Exception as e:
         return "error", f"Error al abrir el link: {type(e).__name__}"
+    if desafio:
+        return "error", ("Protegido contra robots (desafio de Cloudflare): el robot no puede leerlo. "
+                         "Pidele a la marca su catalogo en Excel o que habilite el acceso.")
     if code in (401, 403, 429, 503):
         return "aviso", f"Respondio {code}: el sitio bloquea robots, puede costar crawlearlo"
     if code >= 400:
