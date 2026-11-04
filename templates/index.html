@@ -368,7 +368,7 @@
                 b.style.cssText = 'font-weight:600; color:' + ETQ[f.estado][1];
                 const d = document.createElement('div');
                 d.textContent = f.detalle; d.style.color = '#888';
-                td.appendChild(b); if (f.estado !== 'ok') td.appendChild(d);
+                td.appendChild(b); if (f.estado !== 'ok' || f.detalle !== 'Funciona') td.appendChild(d);
             });
             wrap.appendChild(t);
             box.appendChild(wrap);

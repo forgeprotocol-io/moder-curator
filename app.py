@@ -1525,7 +1525,11 @@ def crawl_shopify(brand, progress_callback=None):
     page = 1
     MAX_SHOPIFY_PAGES = 50  # Cap at 12,500 products
     while page <= MAX_SHOPIFY_PAGES:
-        url = f"{base_url}/products.json?limit=250&page={page}"
+        # Fix (03-11-2026): Shopify Markets fija moneda e idioma segun el pais
+        # del visitante. Render esta en EE.UU.: loraineholmes.cl devolvia el
+        # mercado .com (USD, nombres en ingles). country=<pais> fija el mercado
+        # de la curaduria; las tiendas sin Markets lo ignoran.
+        url = f"{base_url}/products.json?limit=250&page={page}" + (f"&country={brand['_country']}" if brand.get("_country") else "")
         log(f"API página {page} de {brand['name']}... ({len(products)} productos)")
 
         resp = fetch_with_retry(url)
@@ -1632,7 +1636,7 @@ def _shopify_product_js(purl, brand):
     exactos: nombre, precio, tipo, fotos). None si no responde. 03-11-2026."""
     base_url = brand["url"].rstrip("/")
     try:
-        r = fetch_with_retry(purl.split("?")[0].rstrip("/") + ".js")
+        r = fetch_with_retry(purl.split("?")[0].rstrip("/") + ".js" + (f"?country={brand['_country']}" if brand.get("_country") else ""))
         if r is None:
             return None
         p = r.json()
@@ -1962,17 +1966,21 @@ def crawl_all(brands=None, cache_file=None, progress=None, country=None, user_id
         brand_error = [None]
         def _crawl_one():
             try:
-                brand_result[0] = crawl_brand(brand, progress_callback=progress_cb)
+                brand_result[0] = crawl_brand(dict(brand, _country=country) if country else brand,
+                                              progress_callback=progress_cb)
             except Exception as e:
                 brand_error[0] = e
 
         brand_thread = threading.Thread(target=_crawl_one, daemon=True)
         brand_thread.start()
-        brand_thread.join(timeout=180)  # 3 minutes max per brand
+        # Fix (03-11-2026): eran 3 min. Tiendas Shopify que frenan con 429
+        # (loraineholmes.cl ~5,5 min, kaduchile.cl) se cortaban y quedaban
+        # sin leer. 10 min por marca.
+        brand_thread.join(timeout=600)
 
         if brand_thread.is_alive():
-            print(f"  ⏱ TIMEOUT: {brand['name']} took >3 min, skipping")
-            crawl_progress["message"] = f"⏱ {brand['name']}: timeout (>3 min)"
+            print(f"  ⏱ TIMEOUT: {brand['name']} took >10 min, skipping")
+            crawl_progress["message"] = f"⏱ {brand['name']}: timeout (>10 min)"
             crawl_progress["failed_brands"].append(brand["name"])
             # Thread is daemon, will die when main exits
             prev = prev_products_by_brand.get(brand["name"], [])
@@ -2919,6 +2927,10 @@ def _revisar_link(url, domain):
     if code >= 400:
         return "error", f"El link responde error {code}" + (" (pagina no encontrada)" if code == 404 else "")
     if final and final != domain and not final.endswith("." + domain) and not domain.endswith("." + final):
+        # Misma marca con otra terminacion (loraineholmes.cl -> .com): es su
+        # version internacional; Shopify la elige segun el pais del servidor.
+        if final.split(".")[0] == domain.split(".")[0]:
+            return "ok", f"Funciona (tiene version internacional en {final}; el robot lee los precios del pais elegido)"
         return "aviso", f"Redirige a otro dominio: {final}"
     return "ok", "Funciona"
 
