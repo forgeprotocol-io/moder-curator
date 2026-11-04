@@ -566,7 +566,12 @@ def safe_parse_xml(content):
 
 def fetch_with_retry(url, max_retries=3, base_delay=2.0):
     """Fetch URL with exponential backoff retries"""
-    for attempt in range(max_retries):
+    # Fix (03-11-2026): Shopify (ej. kaduchile.cl) responde 429 intermitente a
+    # products.json. Con 3 intentos cortos el robot se rendia, caia a leer las
+    # paginas una por una (8 min) y perdia nombres/categorias. Para 429 ahora
+    # hay 6 intentos y se respeta Retry-After (tope 60 s).
+    attempt, limite = 0, max_retries
+    while attempt < limite:
         try:
             resp = requests.get(url, headers=HEADERS, timeout=45, allow_redirects=True)
             if resp.status_code == 200:
@@ -576,19 +581,26 @@ def fetch_with_retry(url, max_retries=3, base_delay=2.0):
                 return resp
             elif resp.status_code in (429, 500, 502, 503):
                 # Rate limited or overloaded — wait longer
-                wait = base_delay * (2 ** attempt) + 1
-                print(f"    ⏳ {resp.status_code} — retrying in {wait:.0f}s (attempt {attempt + 1}/{max_retries})")
+                if resp.status_code == 429:
+                    limite = max(limite, 6)
+                wait = min(base_delay * (2 ** attempt) + 1, 60)
+                try:
+                    wait = min(max(wait, float(resp.headers.get("Retry-After", 0))), 60)
+                except (TypeError, ValueError):
+                    pass
+                print(f"    ⏳ {resp.status_code} — retrying in {wait:.0f}s (attempt {attempt + 1}/{limite})")
                 time.sleep(wait)
             else:
                 print(f"    ⚠ Status {resp.status_code}")
                 return None
         except requests.exceptions.Timeout:
             wait = base_delay * (2 ** attempt)
-            print(f"    ⏳ Timeout — retrying in {wait:.0f}s (attempt {attempt + 1}/{max_retries})")
+            print(f"    ⏳ Timeout — retrying in {wait:.0f}s (attempt {attempt + 1}/{limite})")
             time.sleep(wait)
         except Exception as e:
             print(f"    ✗ Error: {e}")
             return None
+        attempt += 1
     return None
 
 
@@ -911,10 +923,18 @@ def _scrape_single_product_page(url, brand):
 
         # Extract name
         name = ""
+        # Fix (03-11-2026): kaduchile.cl tiene un h1 "Producto" de migas de pan
+        # antes del h1 real; se saltan los h1 de breadcrumb y los genericos.
+        _GENERICOS = {"producto", "productos", "product", "products", "tienda", "shop", "inicio", "home"}
         for selector in ["h1.product_title", "h1", ".product-title", "[itemprop='name']"]:
-            el = soup.select_one(selector)
-            if el:
-                name = el.get_text(strip=True)
+            for el in soup.select(selector):
+                clases = " ".join(el.get("class") or []).lower()
+                txt = el.get_text(strip=True)
+                if not txt or "breadcrumb" in clases or txt.lower() in _GENERICOS:
+                    continue
+                name = txt
+                break
+            if name:
                 break
         if not name:
             og_title = soup.find("meta", property="og:title")
@@ -925,6 +945,10 @@ def _scrape_single_product_page(url, brand):
         og_img = soup.find("meta", property="og:image")
         if og_img and og_img.get("content"):
             image_url = og_img["content"]
+            if image_url.startswith("//"):
+                image_url = "https:" + image_url
+            elif image_url.startswith("http://"):
+                image_url = "https://" + image_url[len("http://"):]
         else:
             for sel in [".woocommerce-product-gallery img", ".product-image img", "img.wp-post-image"]:
                 img = soup.select_one(sel)
@@ -1048,6 +1072,13 @@ def detect_platform(brand, progress_callback=None):
         resp = requests.get(base_url, headers=HEADERS, timeout=15, allow_redirects=True)
         if resp.status_code == 200:
             html = resp.text.lower()
+            # Fix (03-11-2026): si products.json / wc/store respondieron 429
+            # (freno por exceso de consultas), la plataforma igual se reconoce
+            # por sus huellas en el HTML. kaduchile.cl caia a html_scrape asi.
+            if "cdn.shopify.com" in html or "shopify.theme" in html or "/cdn/shop/" in html:
+                return "shopify"
+            if "woocommerce" in html and "wp-content" in html:
+                return "woocommerce"
             if "jumpseller" in html:
                 return "jumpseller"
             if "tiendanube" in html or "nuvemshop" in html:
@@ -1558,19 +1589,19 @@ def crawl_shopify(brand, progress_callback=None):
         log(f"{brand['name']}: {len(missing_urls)} productos extra en sitemap, scrapeando...")
         for i, purl in enumerate(missing_urls):
             log(f"{brand['name']}: scrapeando extra {i+1}/{len(missing_urls)}")
-            scraped = _scrape_single_product_page(purl, brand)
+            scraped = (_shopify_product_js(purl, brand) if "/products/" in purl else None) or _scrape_single_product_page(purl, brand)
             if scraped:
                 known_urls.add(purl.rstrip("/").lower())
                 products.append(scraped)
             time.sleep(1.5)
 
     # ── PHASE 3: HTML navigation ────────────────────────────────────────
-    html_urls = _discover_product_urls_from_html(brand, known_urls)
+    html_urls = [u for u in _discover_product_urls_from_html(brand, known_urls) if not _es_version_traducida(u)]
     if html_urls:
         log(f"{brand['name']}: {len(html_urls)} productos extra en HTML, scrapeando...")
         for i, purl in enumerate(html_urls):
             log(f"{brand['name']}: scrapeando HTML {i+1}/{len(html_urls)}")
-            scraped = _scrape_single_product_page(purl, brand)
+            scraped = (_shopify_product_js(purl, brand) if "/products/" in purl else None) or _scrape_single_product_page(purl, brand)
             if scraped:
                 known_urls.add(purl.rstrip("/").lower())
                 products.append(scraped)
@@ -1579,6 +1610,66 @@ def crawl_shopify(brand, progress_callback=None):
     log(f"✓ {brand['name']}: {len(products)} productos totales")
     return products
 
+
+def _shopify_product_js(purl, brand):
+    """Lee una pieza Shopify por su endpoint /products/<handle>.js (datos
+    exactos: nombre, precio, tipo, fotos). None si no responde. 03-11-2026."""
+    base_url = brand["url"].rstrip("/")
+    try:
+        r = fetch_with_retry(purl.split("?")[0].rstrip("/") + ".js")
+        if r is None:
+            return None
+        p = r.json()
+    except Exception:
+        return None
+    if not isinstance(p, dict) or not p.get("title"):
+        return None
+    def _img(u):
+        u = u if isinstance(u, str) else (u or {}).get("src", "")
+        return ("https:" + u) if u.startswith("//") else u
+    images = [_img(u) for u in (p.get("images") or [])[:5] if _img(u)]
+    variants = p.get("variants") or []
+    disponibles = [v for v in variants if v.get("available")]
+    pv = disponibles[0] if disponibles else (variants[0] if variants else {})
+    try:
+        price = str(int(round(float(pv.get("price", p.get("price", 0))) / 100)))  # .js trae centavos
+    except (TypeError, ValueError):
+        price = ""
+    tags = p.get("tags") or []
+    if isinstance(tags, str):
+        tags = [t.strip() for t in tags.split(",")]
+    ptype = (p.get("type") or "").strip()
+    desc = BeautifulSoup(p.get("description") or "", "html.parser").get_text(separator=" ").strip()[:500]
+    vt = []
+    for v in variants:
+        t = (v.get("title") or "").strip()
+        if t and t != "Default Title" and t not in vt:
+            vt.append(t)
+    handle = p.get("handle", "")
+    return {
+        "brand": brand["name"],
+        "name": p.get("title", ""),
+        "category": ptype if ptype else categorize(tags, p.get("title", "")),
+        "price": price,
+        "image_url": images[0] if images else "",
+        "all_images": images,
+        "product_url": f"{base_url}/products/{handle}" if handle else purl,
+        "description": desc,
+        "available": bool(disponibles) if variants else bool(p.get("available")),
+        "tags": tags[:8],
+        "variants": vt[:6],
+        "created_at": p.get("created_at", ""),
+    }
+
+
+# Fix (03-11-2026): tiendas Shopify con varios idiomas (ej. kaduchile.cl)
+# publican cada prenda otra vez bajo /en/products/<handle-en-ingles>. El robot
+# las tomaba como 150 prendas "extra" y las abria una por una. Solo se usa la
+# version principal (sin prefijo de idioma).
+_LOCALE_PREFIX = re.compile(r"^https?://[^/]+/[a-z]{2}(?:-[a-z]{2,4})?/(?:products/|sitemap_)", re.I)
+
+def _es_version_traducida(u):
+    return bool(_LOCALE_PREFIX.match((u or "").strip()))
 
 def _fetch_shopify_sitemap_urls(base_url):
     """Fetch product URLs from Shopify sitemap"""
@@ -1600,7 +1691,7 @@ def _fetch_shopify_sitemap_urls(base_url):
         product_sitemap_urls = []
         for sitemap in root.findall('s:sitemap', ns):
             loc = sitemap.find('s:loc', ns)
-            if loc is not None and 'products' in loc.text.lower():
+            if loc is not None and 'products' in loc.text.lower() and not _es_version_traducida(loc.text):
                 product_sitemap_urls.append(loc.text)
 
         # If no index (direct sitemap), check for product URLs directly
@@ -1622,7 +1713,7 @@ def _fetch_shopify_sitemap_urls(base_url):
                     continue
                 for url_el in sm_root.findall('s:url', ns):
                     loc = url_el.find('s:loc', ns)
-                    if loc is not None and '/products/' in loc.text:
+                    if loc is not None and '/products/' in loc.text and not _es_version_traducida(loc.text):
                         product_urls.append(loc.text.strip())
             except Exception:
                 continue
