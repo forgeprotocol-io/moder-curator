@@ -2901,38 +2901,56 @@ def _es_desafio_antibots(resp):
         return False
 
 
-def _revisar_link(url, domain):
-    """-> (estado, detalle). estado: 'ok' | 'aviso' | 'error'."""
-    try:
-        r = requests.get(url, headers=HEADERS, timeout=12, allow_redirects=True, stream=True)
-        code = r.status_code
-        final = _norm_domain(r.url)
-        desafio = _es_desafio_antibots(r)
-        r.close()
-    except requests.exceptions.SSLError:
-        return "error", "Certificado de seguridad (https) invalido"
-    except requests.exceptions.Timeout:
-        return "error", "No respondio en 12 segundos"
-    except requests.exceptions.TooManyRedirects:
-        return "error", "Redirige en circulo (demasiadas redirecciones)"
-    except requests.exceptions.ConnectionError:
-        return "error", "El sitio no existe o no responde (dominio caido o mal escrito)"
-    except Exception as e:
-        return "error", f"Error al abrir el link: {type(e).__name__}"
-    if desafio:
-        return "error", ("Protegido contra robots (desafio de Cloudflare): el robot no puede leerlo. "
-                         "Pidele a la marca su catalogo en Excel o que habilite el acceso.")
-    if code in (401, 403, 429, 503):
-        return "aviso", f"Respondio {code}: el sitio bloquea robots, puede costar crawlearlo"
-    if code >= 400:
-        return "error", f"El link responde error {code}" + (" (pagina no encontrada)" if code == 404 else "")
-    if final and final != domain and not final.endswith("." + domain) and not domain.endswith("." + final):
-        # Misma marca con otra terminacion (loraineholmes.cl -> .com): es su
-        # version internacional; Shopify la elige segun el pais del servidor.
-        if final.split(".")[0] == domain.split(".")[0]:
-            return "ok", f"Funciona (tiene version internacional en {final}; el robot lee los precios del pais elegido)"
-        return "aviso", f"Redirige a otro dominio: {final}"
-    return "ok", "Funciona"
+def _revisar_link(url, domain, country=None):
+    """-> (estado, detalle). estado: 'ok' | 'aviso' | 'error'.
+
+    03-11-2026: reintenta fallas pasajeras (minisima.cl dio un 500 suelto) y
+    pide el mercado del pais (country=CL) para que Shopify Markets no mande al
+    servidor de EE.UU. a la version internacional (.cl -> .com)."""
+    pedido = url
+    if country:
+        pedido += ("&" if "?" in url else "?") + f"country={country}"
+    ultimo = None
+    for intento in range(3):
+        if intento:
+            time.sleep(2 * intento)
+        try:
+            r = requests.get(pedido, headers=HEADERS, timeout=15, allow_redirects=True, stream=True)
+            code = r.status_code
+            final = _norm_domain(r.url)
+            desafio = _es_desafio_antibots(r)
+            r.close()
+        except requests.exceptions.SSLError:
+            return "error", "Certificado de seguridad (https) invalido"
+        except requests.exceptions.TooManyRedirects:
+            return "error", "Redirige en circulo (demasiadas redirecciones)"
+        except requests.exceptions.Timeout:
+            ultimo = ("error", "No respondio en 15 segundos (3 intentos)")
+            continue
+        except requests.exceptions.ConnectionError:
+            ultimo = ("error", "El sitio no existe o no responde (dominio caido o mal escrito)")
+            continue
+        except Exception as e:
+            return "error", f"Error al abrir el link: {type(e).__name__}"
+        if desafio:
+            # El link esta bien; es la tienda la que bloquea robots.
+            return "aviso", ("Link correcto, pero la tienda bloquea robots (Cloudflare): queda en sugeridas, "
+                             "aunque al crawlear no traera prendas. Pidele su catalogo en Excel.")
+        if code >= 500 or code == 429:
+            ultimo = ("error", f"El link responde error {code} (3 intentos)")
+            continue
+        if code in (401, 403):
+            return "aviso", f"Respondio {code}: el sitio bloquea robots, puede costar crawlearlo"
+        if code >= 400:
+            return "error", f"El link responde error {code}" + (" (pagina no encontrada)" if code == 404 else "")
+        if final and final != domain and not final.endswith("." + domain) and not domain.endswith("." + final):
+            # Misma marca con otra terminacion (loraineholmes.cl -> .com): es
+            # su version internacional; Shopify la elige segun el pais.
+            if final.split(".")[0] == domain.split(".")[0]:
+                return "ok", f"Funciona (tiene version internacional en {final}; el robot lee los precios del pais elegido)"
+            return "aviso", f"Redirige a otro dominio: {final}"
+        return "ok", "Funciona"
+    return ultimo
 
 
 @app.route("/import-brands-excel", methods=["POST"])
@@ -3000,7 +3018,7 @@ def import_brands_excel():
         informe.append(item)
 
     with ThreadPoolExecutor(max_workers=12) as ex:
-        resultados = list(ex.map(lambda it: _revisar_link(it["url"], it["domain"]), por_revisar))
+        resultados = list(ex.map(lambda it: _revisar_link(it["url"], it["domain"], country), por_revisar))
     nuevas = []
     for it, (estado, detalle) in zip(por_revisar, resultados):
         it.update(estado=estado, detalle=detalle)
