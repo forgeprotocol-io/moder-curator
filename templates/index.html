@@ -218,13 +218,6 @@
                 No hay marcas sugeridas. Agrega una nueva arriba.
             </div>
             {% endif %}
-            {% if hidden_count > 0 %}
-            <div style="text-align: center; padding: 8px; margin-top: 4px;">
-                <span onclick="unhideAllBrands()" style="cursor:pointer; font-size: 12px; color: #0066cc; text-decoration: underline;">
-                    Restaurar {{ hidden_count }} marca{{ 's' if hidden_count > 1 else '' }} eliminada{{ 's' if hidden_count > 1 else '' }}
-                </span>
-            </div>
-            {% endif %}
         </div>
 
         <!-- Step 3: Crawl -->
@@ -423,7 +416,7 @@
         }
 
         // Fix (31-10-2026) — quitar varias sugeridas a la vez. Ocultar es
-        // reversible: "Restaurar N marcas eliminadas" las devuelve todas.
+        // 05-11-2026: borra de verdad; se recuperan cargandolas desde el Excel.
         function sugDominios(soloMarcadas) {
             const filas = document.querySelectorAll("#suggestedList .brand-suggestion");
             return Array.from(filas)
@@ -470,17 +463,17 @@
         function hideSelectedBrands() {
             const d = sugDominios(true);
             if (!d.length) return;
-            if (!confirm("¿Quitar " + d.length + " marca" + (d.length > 1 ? "s" : "") + " de las sugeridas?\n\nPuedes recuperarlas con «Restaurar marcas eliminadas».")) return;
+            if (!confirm("¿Quitar " + d.length + " marca" + (d.length > 1 ? "s" : "") + " de las sugeridas?\n\nSe borran: para recuperarlas, vuelve a cargarlas desde el Excel.")) return;
             ocultarVarias(d);
         }
         function hideAllSuggested() {
             const d = sugDominios(false);
             if (!d.length) return;
-            if (!confirm("¿Quitar las " + d.length + " marcas sugeridas?\n\nPuedes recuperarlas con «Restaurar marcas eliminadas».")) return;
+            if (!confirm("¿Quitar las " + d.length + " marcas sugeridas?\n\nSe borran: para recuperarlas, vuelve a cargarlas desde el Excel.")) return;
             ocultarVarias(d);
         }
         function hideBrand(domain, el) {
-            if (!confirm('¿Eliminar esta marca del registro? No aparecerá en las sugerencias.')) return;
+            if (!confirm('¿Borrar esta marca de las sugeridas? Para recuperarla, vuelve a cargarla desde el Excel.')) return;
             el.style.opacity = '0.3';
             el.style.pointerEvents = 'none';
             fetch('/hide-brand', {

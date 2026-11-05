@@ -284,12 +284,13 @@ def save_cache_firestore(products, country):
             })
 
         # Now delete old chunks that are no longer needed
-        orphans = old_ids - new_ids
-        if orphans:
+        # (05-11-2026) por referencia y en tandas de 400 (limite de 500 por batch)
+        orphans = sorted(old_ids - new_ids)
+        chunks_ref = db.collection("curator").document(f"cache_{country}").collection("chunks")
+        for i in range(0, len(orphans), 400):
             batch = db.batch()
-            for old in old_chunks:
-                if old.id in orphans:
-                    batch.delete(old.reference)
+            for cid in orphans[i:i + 400]:
+                batch.delete(chunks_ref.document(cid))
             batch.commit()
         return True
     except Exception as e:

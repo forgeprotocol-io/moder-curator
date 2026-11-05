@@ -333,6 +333,44 @@ def _return_to_suggested(brands, country):
     if any(_norm_domain(h) in salen for h in hidden):
         save_hidden_brands([h for h in hidden if _norm_domain(h) not in salen], country)
 
+def _borrar_de_sugeridas(domains, country):
+    """Quitar sugeridas = BORRAR (05-11-2026), sin "Restaurar": se vuelven a
+    cargar desde el Excel. Las propias se eliminan de la lista; las
+    precargadas en el codigo (SUGGESTED_BRANDS_BY_COUNTRY) no se pueden
+    borrar, asi que se marcan como ocultas. Cargarlas de nuevo (Excel o
+    "Agregar marca nueva") las vuelve a mostrar via _return_to_suggested."""
+    salen = set(_norm_domain(d) for d in domains if d)
+    if not salen:
+        return 0
+    custom = load_custom_suggested(country)
+    quedan = [b for b in custom if _norm_domain(b.get("domain")) not in salen]
+    if len(quedan) != len(custom):
+        save_custom_suggested(quedan, country)
+    precargadas = set(_norm_domain(b.get("domain")) for b in SUGGESTED_BRANDS_BY_COUNTRY.get(country, []))
+    hidden = load_hidden_brands(country)
+    ya = set(_norm_domain(h) for h in hidden)
+    nuevas = [d for d in salen if d in precargadas and d not in ya]
+    if nuevas:
+        save_hidden_brands(hidden + nuevas, country)
+    return len(salen)
+
+def _purgar_ocultas(country):
+    """Migracion (05-11-2026): las sugeridas propias que se habian "ocultado"
+    con el sistema anterior se borran de verdad; en ocultas quedan solo las
+    precargadas. Solo escribe si hay algo que limpiar."""
+    hidden = load_hidden_brands(country)
+    if not hidden:
+        return
+    precargadas = set(_norm_domain(b.get("domain")) for b in SUGGESTED_BRANDS_BY_COUNTRY.get(country, []))
+    ocultas = set(_norm_domain(h) for h in hidden)
+    custom = load_custom_suggested(country)
+    quedan = [b for b in custom if _norm_domain(b.get("domain")) not in ocultas]
+    if len(quedan) != len(custom):
+        save_custom_suggested(quedan, country)
+    solo_pre = [h for h in hidden if _norm_domain(h) in precargadas]
+    if len(solo_pre) != len(hidden):
+        save_hidden_brands(solo_pre, country)
+
 def _visible_suggested(country, active_brands=None):
     """Lo que se MUESTRA en sugeridas: las precargadas del pais + las propias,
     sin duplicados, sin las activas y sin las ocultas. Es la unica fuente de
@@ -2951,6 +2989,7 @@ def index():
     product_count = _cache_count(country)
     active_brands = load_active_brands(country)
     has_cache = product_count > 0
+    _purgar_ocultas(country)
     hidden_domains = set(load_hidden_brands(country))
     suggested = _visible_suggested(country, active_brands)
     return render_template("index.html",
@@ -3273,10 +3312,8 @@ def hide_brand():
     domain = data.get("domain", "")
     if not domain:
         return jsonify({"error": "domain required"}), 400
+    _borrar_de_sugeridas([domain], country)  # borrar de verdad (05-11-2026)
     hidden = load_hidden_brands(country)
-    if domain not in hidden:
-        hidden.append(domain)
-        save_hidden_brands(hidden, country)
     # Also remove from active if present
     active = load_active_brands(country)
     active = [b for b in active if b["domain"] != domain]
@@ -3305,11 +3342,8 @@ def hide_brands():
     if len(domains) > 500:
         return jsonify({"error": "maximo 500 por llamada"}), 400
 
+    borradas = _borrar_de_sugeridas(domains, country)  # borrar de verdad (05-11-2026)
     hidden = load_hidden_brands(country)
-    nuevas = [d for d in domains if d not in hidden]
-    if nuevas:
-        hidden.extend(nuevas)
-        save_hidden_brands(hidden, country)
 
     # Igual que /hide-brand: si alguna estaba activa, tambien sale de activas.
     quitar = set(domains)
@@ -3318,7 +3352,7 @@ def hide_brands():
     if len(restantes) != len(active):
         save_active_brands(restantes, country)
 
-    return jsonify({"status": "ok", "hidden": len(nuevas), "hidden_count": len(hidden)})
+    return jsonify({"status": "ok", "hidden": borradas, "hidden_count": len(hidden)})
 
 
 @app.route("/unhide-brands", methods=["POST"])
