@@ -189,7 +189,7 @@
             <hr class="section-divider">
             {% if suggested_brands %}
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <div style="font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px;">Marcas sugeridas</div>
+                <div style="font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px;">Marcas sugeridas (<span id="sugCount">{{ suggested_brands|length }}</span>)</div>
                 <div style="display:flex; gap:6px; align-items:center;">
                     <button class="btn btn-small" id="sugQuitarSel" onclick="hideSelectedBrands()" style="font-size: 11px; padding: 5px 12px; background: #fce4ec; color: #c62828; border: none; display:none;">Quitar seleccionadas (<span id="sugSelCount">0</span>)</button>
                     <button class="btn btn-primary btn-small" id="sugActivarSel" onclick="activateSelectedBrands()" style="font-size: 11px; padding: 6px 14px; display:none;">Activar seleccionadas (<span id="sugActCount">0</span>)</button>
@@ -492,7 +492,11 @@
                 el.style.maxHeight = '0';
                 el.style.padding = '0';
                 el.style.overflow = 'hidden';
-                setTimeout(() => el.remove(), 350);
+                setTimeout(() => {
+                    el.remove();
+                    const n = document.getElementById('sugCount');
+                    if (n) n.textContent = document.querySelectorAll('#suggestedList .brand-suggestion').length;
+                }, 350);
             });
         }
 
