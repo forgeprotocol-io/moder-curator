@@ -1875,29 +1875,60 @@ _global_cache_lock = threading.Lock()  # Protects _products_cache and generated_
 _products_cache = {}  # {cache_file_path: (mtime, products_list)} — max 5 entries
 _PRODUCTS_CACHE_MAX = 5
 
+_cache_load_lock = threading.Lock()  # una sola carga a la vez (04-11-2026)
+
 def _get_cached_products(country):
-    """Load products from in-memory cache or file. Avoids re-parsing JSON on every /curate/next call."""
+    """Load products from in-memory cache or file. Avoids re-parsing JSON on every /curate/next call.
+
+    Fix (04-11-2026): es la UNICA puerta al cache de prendas. Antes index,
+    curate y skip_brand hacian json.load propio en cada visita; con 290 marcas
+    varias copias simultaneas dejaban al servidor sin memoria (502 en ciclo).
+    La carga va bajo un candado (visitas simultaneas no parsean cada una) y el
+    respaldo de Firestore tambien queda memorizado."""
     cache_path = get_cache_file_for_country(country)
-    if os.path.exists(cache_path):
-        mtime = os.path.getmtime(cache_path)
+    fs_key = f"firestore:{country}"
+    def _desde_memoria():
         with _global_cache_lock:
-            if cache_path in _products_cache and _products_cache[cache_path][0] == mtime:
-                return _products_cache[cache_path][1]
-        try:
-            with open(cache_path) as f:
-                products = json.load(f).get("products", [])
-            with _global_cache_lock:
-                if len(_products_cache) >= _PRODUCTS_CACHE_MAX:
-                    oldest_key = next(iter(_products_cache))
-                    del _products_cache[oldest_key]
-                _products_cache[cache_path] = (mtime, products)
-            return products
-        except Exception:
-            pass
-    # Fallback to Firestore
-    fs_products = load_cache_firestore(country)
-    if fs_products:
-        return fs_products
+            if os.path.exists(cache_path):
+                hit = _products_cache.get(cache_path)
+                if hit and hit[0] == os.path.getmtime(cache_path):
+                    return hit[1]
+                return None
+            hit = _products_cache.get(fs_key)
+            if hit and time.time() - hit[0] < 600:
+                return hit[1]
+            return None
+    def _guardar(key, stamp, products):
+        with _global_cache_lock:
+            _products_cache.pop(key, None)
+            if len(_products_cache) >= _PRODUCTS_CACHE_MAX:
+                oldest_key = next(iter(_products_cache))
+                del _products_cache[oldest_key]
+            _products_cache[key] = (stamp, products)
+
+    p = _desde_memoria()
+    if p is not None:
+        return p
+    with _cache_load_lock:
+        p = _desde_memoria()  # otra visita pudo cargarlo mientras esperabamos
+        if p is not None:
+            return p
+        if os.path.exists(cache_path):
+            try:
+                mtime = os.path.getmtime(cache_path)
+                with _global_cache_lock:
+                    _products_cache.pop(cache_path, None)  # soltar la copia vieja antes de parsear
+                with open(cache_path) as f:
+                    products = json.load(f).get("products", [])
+                _guardar(cache_path, mtime, products)
+                return products
+            except Exception:
+                pass
+        # Fallback to Firestore
+        fs_products = load_cache_firestore(country)
+        if fs_products:
+            _guardar(fs_key, time.time(), fs_products)
+            return fs_products
     return None
 
 
@@ -2821,21 +2852,8 @@ def index():
                                hidden_count=0,
                                active_country="", country_info={})
     session = load_session()
-    # Load country-specific cache (Firestore → local file fallback)
-    cache_path = get_cache_file_for_country(country)
-    products = None
-    if os.path.exists(cache_path):
-        try:
-            with open(cache_path) as f:
-                data = json.load(f)
-                products = data.get("products", [])
-        except (json.JSONDecodeError, IOError):
-            pass
-    # Fallback a Firestore si archivo local no existe
-    if not products:
-        fs_products = load_cache_firestore(country)
-        if fs_products:
-            products = fs_products
+    # Copia compartida del cache (antes: json.load propio en cada visita)
+    products = _get_cached_products(country)
     active_brands = load_active_brands(country)
     has_cache = products is not None and len(products) > 0
     hidden_domains = set(load_hidden_brands(country))
@@ -3347,21 +3365,8 @@ def curate():
     """Main curation interface"""
     country = load_active_country()
     session = load_session()
-    # Load country-specific cache
-    cache_path = get_cache_file_for_country(country)
-    products = None
-    if os.path.exists(cache_path):
-        try:
-            with open(cache_path) as f:
-                data = json.load(f)
-                products = data.get("products", [])
-        except (json.JSONDecodeError, IOError):
-            pass
-    if not products:
-        # Fallback to Firestore cache (no legacy global — prevents country leak)
-        fs_products = load_cache_firestore(country)
-        if fs_products:
-            products = fs_products
+    # Copia compartida del cache (antes: json.load propio en cada visita)
+    products = _get_cached_products(country)
     if not products:
         return redirect(url_for("index"))
 
@@ -3409,7 +3414,7 @@ def curate():
                                accepted_count=len(session.get("accepted", [])),
                                total=len(products))
 
-    current = remaining[0]
+    current = dict(remaining[0])  # copia: no tocar la lista compartida
     current["_previous_count"] = len(session.get("previous_rows", []))
     progress = len(products) - len(all_remaining)
 
@@ -3543,13 +3548,7 @@ def action():
         brand_to_skip = data.get("brand", "")
         if brand_to_skip:
             country = load_active_country()
-            cache_file = get_cache_file_for_country(country)
-            products = []
-            if os.path.exists(cache_file):
-                with open(cache_file) as f:
-                    products = json.load(f).get("products", [])
-            if not products:
-                products = load_cache_firestore(country) or []
+            products = _get_cached_products(country) or []
             previous_urls = set(_norm_url(u) for u in session.get("previous_urls", []))
             processed = set(p.get("product_url", "").rstrip("/") for p in session.get("accepted", []))
             processed.update(u.rstrip("/") for u in session.get("rejected", []))
