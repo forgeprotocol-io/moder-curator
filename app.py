@@ -1945,6 +1945,7 @@ def crawl_all(brands=None, cache_file=None, progress=None, country=None, user_id
             pass
 
     all_products = []
+    _ultimo_parcial = [time.time()]
     for i, brand in enumerate(brands):
         # Check cancel signal
         if crawl_cancel_event.is_set():
@@ -1983,7 +1984,7 @@ def crawl_all(brands=None, cache_file=None, progress=None, country=None, user_id
             crawl_progress["message"] = f"⏱ {brand['name']}: timeout (>10 min)"
             crawl_progress["failed_brands"].append(brand["name"])
             # Thread is daemon, will die when main exits
-            prev = prev_products_by_brand.get(brand["name"], [])
+            prev = prev_products_by_brand.pop(brand["name"], [])
             if prev:
                 all_products.extend(prev)
             time.sleep(1)
@@ -1992,7 +1993,7 @@ def crawl_all(brands=None, cache_file=None, progress=None, country=None, user_id
         if brand_error[0]:
             print(f"  ❌ {brand['name']} error: {brand_error[0]}")
             crawl_progress["failed_brands"].append(brand["name"])
-            prev = prev_products_by_brand.get(brand["name"], [])
+            prev = prev_products_by_brand.pop(brand["name"], [])
             if prev:
                 all_products.extend(prev)
             time.sleep(1)
@@ -2002,7 +2003,7 @@ def crawl_all(brands=None, cache_file=None, progress=None, country=None, user_id
 
         if not products:
             # PRESERVE previous data for this brand if crawl fails
-            prev = prev_products_by_brand.get(brand["name"], [])
+            prev = prev_products_by_brand.pop(brand["name"], [])
             if prev:
                 all_products.extend(prev)
                 crawl_progress["message"] = f"⚠ {brand['name']}: sin acceso (usando {len(prev)} del cache anterior)"
@@ -2014,6 +2015,7 @@ def crawl_all(brands=None, cache_file=None, progress=None, country=None, user_id
             time.sleep(2.0)
             continue
 
+        prev_products_by_brand.pop(brand["name"], None)  # ya no se necesita: libera memoria
         products = filter_unwanted_products(products)
         before = len(products)
         products = deduplicate_products(products)
@@ -2028,15 +2030,21 @@ def crawl_all(brands=None, cache_file=None, progress=None, country=None, user_id
         else:
             print(f"  → {after} products")
 
-        # Guardar cache parcial después de cada marca
-        try:
-            partial = {"products": all_products, "crawled_at": datetime.now().isoformat(), "partial": True}
-            tmp_path = cache_file + ".tmp"
-            with open(tmp_path, "w") as f:
-                json.dump(partial, f, ensure_ascii=False)
-            os.replace(tmp_path, cache_file)
-        except Exception as e:
-            print(f"  ⚠ Partial cache save failed: {e}")
+        # Guardar cache parcial — fix (04-11-2026): era después de CADA marca;
+        # con 290 marcas reescribia el archivo entero 290 veces (cada vez mas
+        # grande), bloqueaba el servidor y Render lo reiniciaba (502).
+        # Ahora como maximo una vez por minuto.
+        if time.time() - _ultimo_parcial[0] >= 60:
+            _ultimo_parcial[0] = time.time()
+            try:
+                partial = {"products": all_products, "crawled_at": datetime.now().isoformat(), "partial": True}
+                tmp_path = cache_file + ".tmp"
+                with open(tmp_path, "w") as f:
+                    json.dump(partial, f, ensure_ascii=False)
+                os.replace(tmp_path, cache_file)
+                del partial
+            except Exception as e:
+                print(f"  ⚠ Partial cache save failed: {e}")
 
         # Esperar entre marcas
         if i < len(brands) - 1:
@@ -2047,6 +2055,12 @@ def crawl_all(brands=None, cache_file=None, progress=None, country=None, user_id
     all_products = deduplicate_products(all_products)
     if total_before != len(all_products):
         print(f"Cross-brand dedup: {total_before} → {len(all_products)}")
+
+    # Liberar copias que ya no sirven antes de escribir (04-11-2026)
+    prev_products_by_brand.clear()
+    with _global_cache_lock:
+        _products_cache.pop(cache_file, None)
+    import gc; gc.collect()
 
     # Guardar cache final
     cache_data = {"products": all_products, "crawled_at": datetime.now().isoformat()}

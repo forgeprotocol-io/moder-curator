@@ -260,8 +260,11 @@ def save_cache_firestore(products, country):
             "updated_at": firestore_timestamp(),
         })
         # Write new chunks FIRST, then delete old ones (crash-safe: data always exists)
-        old_chunks = list(db.collection("curator").document(f"cache_{country}").collection("chunks").stream())
-        old_ids = set(c.id for c in old_chunks)
+        # Fix (04-11-2026): .stream() descargaba TODAS las prendas del crawl
+        # anterior solo para leer sus ids (cientos de MB con muchas marcas →
+        # el servidor se quedaba sin memoria y Render mostraba 502).
+        # list_documents() trae solo las referencias.
+        old_ids = set(d.id for d in db.collection("curator").document(f"cache_{country}").collection("chunks").list_documents())
         new_ids = set()
 
         for i in range(0, len(products), 100):
