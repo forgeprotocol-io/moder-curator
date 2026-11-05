@@ -1909,6 +1909,14 @@ def _get_cached_products(country):
     p = _desde_memoria()
     if p is not None:
         return p
+    if crawl_lock.locked():
+        # Fix (05-11-2026): durante un crawl el archivo cambia cada minuto y
+        # cada visita cargaba otra copia encima de las prendas del crawl →
+        # Render "exceeded its memory limit". Se usa lo que ya haya en
+        # memoria (aunque sea anterior) o nada hasta que termine.
+        with _global_cache_lock:
+            hit = _products_cache.get(cache_path) or _products_cache.get(fs_key)
+        return hit[1] if hit else None
     with _cache_load_lock:
         p = _desde_memoria()  # otra visita pudo cargarlo mientras esperabamos
         if p is not None:
@@ -1961,19 +1969,58 @@ def crawl_all(brands=None, cache_file=None, progress=None, country=None, user_id
             del crawl_progress[k]
     crawl_progress.update(new_state)
 
-    # Load previous cache to preserve data for brands that fail
-    prev_products_by_brand = {}
+    # Fix (05-11-2026) — memoria. Render reiniciaba el robot por pasar los
+    # 512 MB: durante el crawl convivian las prendas nuevas, TODO el crawl
+    # anterior y la copia para curar. Ahora: (a) se suelta la copia para
+    # curar; (b) el crawl anterior se reparte en archivos por marca en disco
+    # y solo se lee el de una marca si esa falla.
+    with _global_cache_lock:
+        _products_cache.pop(cache_file, None)
+        _products_cache.pop(f"firestore:{country}", None)
+    import gc, hashlib, shutil
+    gc.collect()
+    prev_dir = cache_file + ".prev"
+    shutil.rmtree(prev_dir, ignore_errors=True)
+    def _prev_path(b):
+        return os.path.join(prev_dir, hashlib.md5(b.encode("utf-8")).hexdigest() + ".json")
     if os.path.exists(cache_file):
         try:
             with open(cache_file) as f:
                 prev = json.load(f).get("products", [])
-                for p in prev:
-                    b = p.get("brand", "")
-                    if b not in prev_products_by_brand:
-                        prev_products_by_brand[b] = []
-                    prev_products_by_brand[b].append(p)
-        except Exception:
-            pass
+            por_marca = {}
+            for p in prev:
+                por_marca.setdefault(p.get("brand", ""), []).append(p)
+            del prev
+            os.makedirs(prev_dir, exist_ok=True)
+            for b, ps in por_marca.items():
+                with open(_prev_path(b), "w") as f:
+                    json.dump(ps, f, ensure_ascii=False)
+            del por_marca
+            gc.collect()
+        except Exception as e:
+            print(f"  ⚠ No se pudo respaldar el crawl anterior: {e}")
+
+    class _PrevPorMarca:
+        """Misma interfaz que el dict de antes (pop/clear), leyendo de disco."""
+        def pop(self, b, default=None):
+            path = _prev_path(b)
+            if not os.path.exists(path):
+                return default
+            try:
+                if default is None:  # solo liberar: no hace falta leerlo
+                    return None
+                with open(path) as f:
+                    return json.load(f)
+            except Exception:
+                return default
+            finally:
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
+        def clear(self):
+            shutil.rmtree(prev_dir, ignore_errors=True)
+    prev_products_by_brand = _PrevPorMarca()
 
     all_products = []
     _ultimo_parcial = [time.time()]
@@ -2048,6 +2095,10 @@ def crawl_all(brands=None, cache_file=None, progress=None, country=None, user_id
 
         prev_products_by_brand.pop(brand["name"], None)  # ya no se necesita: libera memoria
         products = filter_unwanted_products(products)
+        for p in products:  # la pantalla muestra 200; Firestore guardaba 300
+            d = p.get("description")
+            if d and len(d) > 300:
+                p["description"] = d[:300]
         before = len(products)
         products = deduplicate_products(products)
         after = len(products)
