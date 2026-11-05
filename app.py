@@ -1876,6 +1876,50 @@ _products_cache = {}  # {cache_file_path: (mtime, products_list)} — max 5 entr
 _PRODUCTS_CACHE_MAX = 5
 
 _cache_load_lock = threading.Lock()  # una sola carga a la vez (04-11-2026)
+_count_cache = {}  # {cache_path: (mtime, n)}
+
+def _cache_count(country):
+    """Cuantas prendas hay en el cache SIN cargarlas (05-11-2026). La portada
+    solo muestra el numero; cargar todo para contarlo podia tumbar el robot
+    antes de alcanzar a usar "Resetear todo". Cuenta las prendas leyendo el
+    archivo por partes; sin archivo usa el contador que guarda Firestore."""
+    cache_path = get_cache_file_for_country(country)
+    if os.path.exists(cache_path):
+        mtime = os.path.getmtime(cache_path)
+        with _global_cache_lock:
+            hit = _products_cache.get(cache_path)
+            if hit and hit[0] == mtime:
+                return len(hit[1])
+        c = _count_cache.get(cache_path)
+        if c and c[0] == mtime:
+            return c[1]
+        n, cola, clave = 0, b"", b'"product_url"'
+        try:
+            with open(cache_path, "rb") as fh:
+                while True:
+                    trozo = fh.read(1 << 20)
+                    if not trozo:
+                        break
+                    bloque = cola + trozo
+                    n += bloque.count(clave)
+                    cola = bloque[-(len(clave) - 1):]  # por si una clave queda partida entre trozos
+        except OSError:
+            return 0
+        _count_cache[cache_path] = (mtime, n)
+        return n
+    with _global_cache_lock:
+        hit = _products_cache.get(f"firestore:{country}")
+        if hit:
+            return len(hit[1])
+    db = _get_db_safe()
+    if db:
+        try:
+            doc = db.collection("curator").document(f"cache_{country}").get()
+            if doc.exists:
+                return int(doc.to_dict().get("product_count") or 0)
+        except Exception:
+            pass
+    return 0
 
 def _get_cached_products(country):
     """Load products from in-memory cache or file. Avoids re-parsing JSON on every /curate/next call.
@@ -2903,17 +2947,17 @@ def index():
                                hidden_count=0,
                                active_country="", country_info={})
     session = load_session()
-    # Copia compartida del cache (antes: json.load propio en cada visita)
-    products = _get_cached_products(country)
+    # Solo el conteo: no carga las prendas (05-11-2026)
+    product_count = _cache_count(country)
     active_brands = load_active_brands(country)
-    has_cache = products is not None and len(products) > 0
+    has_cache = product_count > 0
     hidden_domains = set(load_hidden_brands(country))
     suggested = _visible_suggested(country, active_brands)
     return render_template("index.html",
                            selecting_country=False,
                            countries=COUNTRIES,
                            has_cache=has_cache,
-                           product_count=len(products) if products else 0,
+                           product_count=product_count,
                            accepted_count=len(session.get("accepted", [])),
                            rejected_count=len(session.get("rejected", [])),
                            previous_count=len(session.get("previous_urls", [])),

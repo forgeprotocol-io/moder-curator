@@ -370,17 +370,21 @@ def clear_cache_firestore(country):
         return False
     try:
         doc_ref = db.collection("curator").document(f"cache_{country}")
-        chunks = list(doc_ref.collection("chunks").stream())
-        if chunks:
+        # Fix (05-11-2026): (1) .stream() descargaba todas las prendas solo
+        # para borrarlas → el reset podia dejar al robot sin memoria; ahora
+        # list_documents() trae solo referencias. (2) Un batch de Firestore
+        # admite max. 500 operaciones: con >500 chunks el commit fallaba en
+        # silencio, el cache quedaba y el robot lo volvia a cargar. Tandas de 400.
+        refs = list(doc_ref.collection("chunks").list_documents())
+        for i in range(0, len(refs), 400):
             batch = db.batch()
-            for chunk in chunks:
-                batch.delete(chunk.reference)
-            batch.delete(doc_ref)
+            for ref in refs[i:i + 400]:
+                batch.delete(ref)
             batch.commit()
-        else:
-            doc_ref.delete()
+        doc_ref.delete()
         return True
     except Exception as e:
+        print(f"Error limpiando cache de Firestore ({country}): {e}")
         return False
 
 
