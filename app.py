@@ -4208,8 +4208,14 @@ def upload_to_admin():
         print(f"⚠️ [upload_to_admin] stores scan falló, abortando delete-sweep: {_list_err}")
         stores_to_delete = []
 
-    for old_id in stores_to_delete:
-        batch.delete(stores_collection.document(old_id))
+    # Fix (08-11-2026) — la fundadora: subir al admin NUNCA borra tiendas;
+    # solo agrega o actualiza. Eliminar es manual, desde el admin. Ademas,
+    # borrar una tienda ahora borra su cuenta Business (trigger onStoreDeleted),
+    # asi que este barrido podia eliminar marcas con cuenta (ej. La Côt, creada
+    # a mano). Se calcula y se informa en el log, pero no se borra nada.
+    if stores_to_delete:
+        print(f"ℹ️ [upload_to_admin] {len(stores_to_delete)} tienda(s) del país no venían en la subida; se CONSERVAN: {stores_to_delete[:10]}")
+    stores_to_delete = []
 
     print(
         f"🗑️  [upload_to_admin] país={country} scanned={scanned} "
