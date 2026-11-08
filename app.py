@@ -2285,6 +2285,19 @@ def _sanitize_cell(value):
         return "'" + value
     return value
 
+def _precio_ok(v):
+    """True si v es un precio numérico positivo ("84990", "84990.0")."""
+    try:
+        return float(str(v).replace(",", "")) > 0
+    except (TypeError, ValueError):
+        return False
+
+
+def _precio_fmt(v):
+    """84990 → "$84.990" (formato CLP que usa el admin)."""
+    return "$" + "{:,}".format(int(round(float(str(v).replace(",", ""))))).replace(",", ".")
+
+
 def build_curated_brands_for_ordering(session, country, brand_selection_order=None):
     """Cruza session['accepted'] + session['previous_rows'] con el crawl cache
     para reconstruir las marcas aprobadas con toda la información necesaria
@@ -2423,6 +2436,7 @@ def build_curated_brands_for_ordering(session, country, brand_selection_order=No
             "category": category,
             "tags": prev_tags[:4],
             "is_trend": is_trend,
+            "price": (cached.get("price", "") if cached else "") or prev_row.get("Precio", "") or "",
             "source": "previous",
         }
 
@@ -2449,6 +2463,7 @@ def build_curated_brands_for_ordering(session, country, brand_selection_order=No
             "category": p.get("category", ""),
             "tags": [_sanitize_cell(t) for t in tags[:4]],
             "is_trend": accepted_info[url_norm]["is_trend"],
+            "price": p.get("price", "") or "",
             "source": "accepted",
         }
 
@@ -2520,7 +2535,7 @@ def generate_plantilla(all_products, accepted_urls, trend_urls, output_path,
     # admin si quiere corregir.
     headers = ["Link", "Marca", "Aprobado", "Tendencia", "Orden", "Posición",
                "Top 20", "Categoría", "Etiqueta 1", "Etiqueta 2", "Etiqueta 3",
-               "Etiqueta 4", "Imagen", "Título"]
+               "Etiqueta 4", "Imagen", "Título", "Precio"]
 
     header_font = Font(name="Calibri", bold=True, color="FFFFFF", size=11)
     header_fill = PatternFill(start_color="1C1C1E", end_color="1C1C1E", fill_type="solid")
@@ -2586,6 +2601,7 @@ def generate_plantilla(all_products, accepted_urls, trend_urls, output_path,
                         "category": str(prev_row.get("Categoría", "") or "").strip(),
                         "tags": [t for t in tags_list if t],
                         "image_url": prev_row.get("Imagen", "") if isinstance(prev_row.get("Imagen", ""), str) else "",
+                        "price": prev_row.get("Precio", "") or "",
                         "_from_previous": True,  # marker para distinguir en el loop
                         "_prev_is_trend": str(prev_row.get("Tendencia", "No")).strip().lower() in ("si", "sí", "yes", "true"),
                     }
@@ -2599,7 +2615,9 @@ def generate_plantilla(all_products, accepted_urls, trend_urls, output_path,
             # mirar el crawl cache por si el producto sigue crawleable.
             legacy_img = prev_row.get("Imagen", "")
             legacy_title = prev_row.get("Título", "") or prev_row.get("Titulo", "")
-            if not legacy_img or not legacy_title:
+            legacy_price = prev_row.get("Precio", "") or ""
+            cached_p = None
+            if not legacy_img or not legacy_title or not legacy_price:
                 # Fallback: buscar en el crawl cache por URL normalizada
                 cached_p = next(
                     (p for p in all_products
@@ -2611,6 +2629,8 @@ def generate_plantilla(all_products, accepted_urls, trend_urls, output_path,
                         legacy_img = cached_p.get("image_url", "") or ""
                     if not legacy_title:
                         legacy_title = cached_p.get("name", "") or cached_p.get("title", "") or ""
+                    if not legacy_price:
+                        legacy_price = cached_p.get("price", "") or ""
 
             col_map = {
                 1: link,
@@ -2627,6 +2647,8 @@ def generate_plantilla(all_products, accepted_urls, trend_urls, output_path,
                 12: prev_row.get("Etiqueta 4", ""),
                 13: legacy_img,
                 14: legacy_title,
+                # 08-11-2026: precio del crawl (antes no viajaba al admin).
+                15: legacy_price,
             }
             for c, val in col_map.items():
                 cell = ws.cell(row=row, column=c, value=val if val else "")
@@ -2741,10 +2763,12 @@ def generate_plantilla(all_products, accepted_urls, trend_urls, output_path,
             # Imagen y Título — del crawl o del Excel previo (fix 12 abril 2026)
             ws.cell(row=row, column=13, value=_sanitize_cell(image_url)).border = thin_border
             ws.cell(row=row, column=14, value=_sanitize_cell(product_title)).border = thin_border
+            # Precio — del crawl (08-11-2026: el admin lo importa a la tienda).
+            ws.cell(row=row, column=15, value=_sanitize_cell(str(p.get("price", "") or ""))).border = thin_border
 
             # Color: green for approved, orange for rejected
             fill = approved_fill if is_approved else rejected_fill
-            for c in range(1, 15):
+            for c in range(1, 16):
                 ws.cell(row=row, column=c).fill = fill
 
             ws.cell(row=row, column=1).hyperlink = p.get("product_url", "")
@@ -2778,6 +2802,7 @@ def generate_plantilla(all_products, accepted_urls, trend_urls, output_path,
                 12: prev_row.get("Etiqueta 4", ""),
                 13: prev_row.get("Imagen", ""),
                 14: prev_row.get("Título", "") or prev_row.get("Titulo", ""),
+                15: prev_row.get("Precio", ""),
             }
             for c, val in col_map.items():
                 cell = ws.cell(row=row, column=c, value=val if val else "")
@@ -2790,11 +2815,11 @@ def generate_plantilla(all_products, accepted_urls, trend_urls, output_path,
     # Column widths — 14 columnas ahora (agregamos "Imagen" y "Título" al
     # final). El width 40 le da espacio a URLs largas de CDN de e-commerce.
     # El width 30 para Título cabe nombres típicos de productos de moda.
-    widths = [55, 22, 10, 10, 8, 10, 8, 15, 15, 15, 15, 15, 40, 30]
+    widths = [55, 22, 10, 10, 8, 10, 8, 15, 15, 15, 15, 15, 40, 30, 12]
     for col, w in enumerate(widths, 1):
         ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = w
 
-    ws.auto_filter.ref = f"A1:N{row - 1}"
+    ws.auto_filter.ref = f"A1:O{row - 1}"
     ws.freeze_panes = "A2"
 
     # Save to disk
@@ -4255,6 +4280,8 @@ def upload_to_admin():
                 "tag3": tags_clean[2],
                 "tag4": tags_clean[3],
                 "tags": [t for t in tags_clean if t],
+                # 08-11-2026: el precio del crawl ahora sí llega a la tienda.
+                **({"price": _precio_fmt(p.get("price"))} if _precio_ok(p.get("price")) else {}),
             })
 
         store_doc = {
