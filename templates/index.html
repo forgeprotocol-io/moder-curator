@@ -197,6 +197,12 @@
                     <button class="btn btn-primary btn-small" onclick="addAllSuggested()" style="font-size: 11px; padding: 6px 14px;">Agregar todas</button>
                 </div>
             </div>
+            <!-- 18-11-2026: buscador de marcas sugeridas: filtra la lista mientras escribes. -->
+            <div style="position:relative; margin-bottom:8px;">
+                <input type="search" id="sugBuscar" placeholder="Buscar marca por nombre o link…" autocomplete="off" oninput="filtrarSugeridas(this.value)"
+                       style="width:100%; box-sizing:border-box; padding:10px 14px; border:1.5px solid #ddd; border-radius:10px; font-size:13px; outline:none;">
+            </div>
+            <div id="sugSinRes" style="display:none; text-align:center; padding:12px; font-size:13px; color:#aaa;">No hay marcas sugeridas que coincidan.</div>
             <div class="brand-suggestions" id="suggestedList">
                 {% for brand in suggested_brands %}
                 <div class="brand-suggestion" id="sug_{{ brand.domain | replace('.', '_') | replace('/', '_') }}"
@@ -373,7 +379,29 @@
             box.appendChild(ok);
         }
 
+        // 18-11-2026: filtra las sugeridas por nombre o dominio (sin tildes ni mayúsculas).
+        function sinTildes(t) { return (t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); }
+        function filtrarSugeridas(q) {
+            const k = sinTildes(q);
+            let n = 0;
+            document.querySelectorAll('#suggestedList .brand-suggestion').forEach(f => {
+                const ok = !k || sinTildes(f.dataset.name + ' ' + f.dataset.domain).includes(k);
+                f.style.display = ok ? '' : 'none';
+                if (ok) n++;
+            });
+            const vacio = document.getElementById('sugSinRes');
+            if (vacio) vacio.style.display = n ? 'none' : '';
+            updateSugSel();
+        }
         function addAllSuggested() {
+            // Con una búsqueda escrita, "Agregar todas" agrega solo las que se ven.
+            const q = (document.getElementById('sugBuscar') || {}).value;
+            if (q && q.trim()) {
+                document.querySelectorAll('#suggestedList .brand-suggestion').forEach(f => {
+                    const c = f.querySelector('.sug-check'); if (c) c.checked = f.style.display !== 'none';
+                });
+                return activateSelectedBrands();
+            }
             fetch('/add-all-suggested', { method: 'POST', headers: {'Content-Type':'application/json'}, body: '{}' })
                 .then(r => r.json())
                 .then(() => location.reload())
@@ -420,6 +448,7 @@
         function sugDominios(soloMarcadas) {
             const filas = document.querySelectorAll("#suggestedList .brand-suggestion");
             return Array.from(filas)
+                .filter(f => f.style.display !== "none")
                 .filter(f => !soloMarcadas || (f.querySelector(".sug-check") || {}).checked)
                 .map(f => f.dataset.domain);
         }
@@ -435,6 +464,7 @@
         // activas y entran al próximo crawl / curado.
         function activateSelectedBrands() {
             const filas = Array.from(document.querySelectorAll("#suggestedList .brand-suggestion"))
+                .filter(f => f.style.display !== "none")
                 .filter(f => (f.querySelector(".sug-check") || {}).checked);
             if (!filas.length) return;
             const brands = filas.map(f => ({ name: f.dataset.name, domain: f.dataset.domain, url: f.dataset.url }));

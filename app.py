@@ -3017,6 +3017,12 @@ def index():
     _purgar_ocultas(country)
     hidden_domains = set(load_hidden_brands(country))
     suggested = _visible_suggested(country, active_brands)
+    # 18-11-2026: marcas sugeridas en orden alfabético (sin distinguir tildes ni mayúsculas).
+    import unicodedata
+    def _alfa(b):
+        n = unicodedata.normalize("NFKD", str(b.get("name") or b.get("domain") or ""))
+        return "".join(c for c in n if not unicodedata.combining(c)).casefold().strip()
+    suggested = sorted(suggested, key=_alfa)
     return render_template("index.html",
                            selecting_country=False,
                            countries=COUNTRIES,
